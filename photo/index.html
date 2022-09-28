@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+
+        .root {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .controller {
+            background-color: antiquewhite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .preview {
+            background-color: aqua;
+            margin: auto;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .cvs-wrapper {
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #canvas {
+            cursor: all-scroll;
+            position: absolute;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="root">
+        <div class="preview">
+            <div class="cvs-wrapper">
+                <canvas id="canvas"></canvas>
+            </div>
+        </div>
+        <div class="ps-controller">
+            <!-- <input type="file" accept="image/*" id="imgInput" />
+            <a role="button" id="download-btn">download</a> -->
+            <ps-controller canvas-id="canvas" />
+        </div>
+
+
+        <script type="text/javascript">
+            (()=>{"use strict";class t{constructor(t){this.touchStart=!1,this.initX=0,this.initY=0,this.element=t,this.initX=this.element.offsetLeft,this.initY=this.element.offsetTop,this.element.addEventListener("mousedown",(()=>{this.touchStart=!0})),window.addEventListener("mouseup",(()=>{this.touchStart=!1})),this.element.addEventListener("mousemove",this.handleMove.bind(this),!1)}resetPosition(){this.element.style.left="unset",this.element.style.top="unset"}handleMove(t){if(!this.touchStart)return;const{movementX:e,movementY:i}=t;this.element.style.left=`${this.element.offsetLeft+e}px`,this.element.style.top=`${this.element.offsetTop+i}px`}}class e extends HTMLElement{constructor(){super(),this.useDpi=!1,this.sr=this.attachShadow({mode:"open"}),this.root=document.createElement("div"),this.initStyle(),this.initView(),this.initListener()}initStyle(){const t=document.createElement("style");t.textContent="   \n            .form{\n                display: flex;\n                flex-direction: column;\n                padding: 24px\n            }\n            label{\n                margin-bottom: 4px\n            }\n            .form-row{\n                display: flex;\n                flex-direction: column;\n                margin: 12px 0 0 0\n            }\n            input[type=number]{\n                width: 120px\n            }\n\n            #btn-download{\n                margin-top: 24px\n            }\n        ",this.sr.appendChild(t)}initView(){this.root.innerHTML='\n            <form class="form" id="config-form" onsubmit="return false">\n                <div class="form-row">\n                    <label for="file-sel">选择图片：</label>\n                    <input id=\'file-sel\' name="file" type=\'file\' accept=\'image/*\'></input>\n                </div>\n                <div class="form-row">\n                    <div>\n                        <label for="radio-re">按照分辨率</label>\n                        <input id="radio-re" checked type="radio" name="type" value="reso"></input>\n                        <label for="radio-sz">按照尺寸</label>\n                        <input type="radio" id="radio-sz" name="type" value="size"></input>\n                    </div>\n                </div>\n                <div class="form-row">\n                    <label for="resolution-s">设置分辨率(像素)：</label>\n                    <div>\n                        <input id=\'resolution-s\' name="resolution-s" type=\'number\'></input> x <input id=\'resolution-e\' name="resolution-e" type=\'number\'></input>\n                    </div>\n                </div>\n                <div class="form-row">\n                    <label for="inp-dpi">设置dpi：</label>\n                    <input id=\'inp-dpi\' value="350" name="dpi" type=\'number\'></input>\n                </div>\n                <div class="form-row">\n                    <label for="size-s">设置尺寸(英寸)：</label>\n                    <div>\n                        <input id=\'size-s\' name="size-s" type=\'number\'></input> x <input id=\'size-e\' name="size-e" type=\'number\'></input>\n                    </div>\n                </div>\n                <button id=\'btn-download\'>下载</button>\n            </form>\n        ',this.inputResolutionS=this.root.querySelector("#resolution-s"),this.inputResolutionE=this.root.querySelector("#resolution-e"),this.inputSizeS=this.root.querySelector("#size-s"),this.inputSizeE=this.root.querySelector("#size-e"),this.inputFile=this.root.querySelector("#file-sel"),this.inputDpi=this.root.querySelector("#inp-dpi"),this.downloadBtn=this.root.querySelector("#btn-download"),this.sr.appendChild(this.root),this.touchHelper=new t(this.getTargetCanvas()),this.disableDownload(),this.swithToSize(!1)}disableDownload(){this.downloadBtn.disabled=!0}enableDownload(){this.downloadBtn.disabled=!1}parseAbsNumber(t,e=0){return"string"==typeof t&&(t=Number(t)),t?t<=0?e:t:e}setValueByDpi(){const t=this.parseAbsNumber(this.inputDpi.value,350),e=this.parseAbsNumber(this.inputSizeS.value),i=this.parseAbsNumber(this.inputSizeE.value);this.inputResolutionS.value=String(Math.ceil(t*e)),this.inputResolutionE.value=String(Math.ceil(t*i))}setValueByRes(){this.inputDpi.value||(this.inputDpi.value=String(350));const t=this.parseAbsNumber(this.inputDpi.value,350),e=this.parseAbsNumber(this.inputResolutionS.value),i=this.parseAbsNumber(this.inputResolutionE.value);this.inputSizeS.value=String(Number(e/t).toPrecision(2)),this.inputSizeE.value=String(Number(i/t).toPrecision(2))}setRes(t,e){this.inputResolutionS.value=String(t),this.inputResolutionE.value=String(e),this.setValueByRes()}swithToSize(t=!1){this.useDpi?this.setValueByDpi():this.setValueByRes(),this.useDpi=t,this.inputResolutionE.disabled=t,this.inputResolutionS.disabled=t,this.inputDpi.disabled=!t,this.inputSizeE.disabled=!t,this.inputSizeS.disabled=!t}collectFormData(){const t={};return this.root.querySelector("#config-form")?.querySelectorAll("input").forEach((e=>{const i=e.getAttribute("name");if(!i)return;const n=e.getAttribute("type");t[i]="file"===n?e.files?.[0]:e.value})),t}getTargetCanvas(){const t=this.getAttribute("canvas-id");if(!t)return;const e=document.querySelector(`#${t}`);if(!(e&&e instanceof HTMLCanvasElement))throw new Error(`${this.getAttribute("canvas-id")} not canvas`);return e}async onConfigChange(t){const e=t.target;if("type"===e.name)return void this.swithToSize("size"===e.value);const i=this.getTargetCanvas(),n=this.collectFormData();let s=n["resolution-s"],o=n["resolution-e"];const l=n.dpi,r=n["size-s"],a=n["size-e"];if(this.useDpi&&(s=r*l,o=a*l,this.inputResolutionE.value=String(parseInt(o)),this.inputResolutionS.value=String(parseInt(s))),!n.file)return;const u={w:parseInt(s,10)||0,h:parseInt(o,10)||0,bg:"black"};this.disableDownload(),this.touchHelper?.resetPosition();const{bitmap:h}=await async function(t,e,i){const n=await createImageBitmap(e);return function(t,e,i,n){!function(t,e){t.save(),t.clearRect(0,0,e.width,e.height),t.restore()}(e,i),i.width=!n.w||n.w<=0?t.width:n.w,i.height=!n.h||n.h<=0?t.height:n.h,function(t,e,i){t.save(),t.fillStyle=i,t.fillRect(0,0,e.width,e.height),t.restore()}(e,i,n.bg||"transparent");const s=t.width/i.width,o=t.height/i.height,l=o>s?o:s,r=t.width/l,a=t.height/l;let u=(i.width-r)/2,h=(i.height-a)/2;e.save(),e.translate(u,h),e.scale(1/l,1/l),e.drawImage(t,0,0),e.restore()}(n,t.getContext("2d"),t,i),{bitmap:n}}(i,n.file,u);this.setRes(u.w||h.width,u.h||h.height),this.enableDownload()}downloadImage(){const t=this.inputFile.files?.[0]?.name;if(!t)return;const e=this.getTargetCanvas(),i=document.createElement("a");i.addEventListener("click",(()=>{i.href=e.toDataURL(),i.download=`${this.inputResolutionS?.value}x${this.inputResolutionE.value}_${this.inputSizeS.value}x${this.inputSizeE.value}_${this.inputDpi.value}dpi_${t}`}),!1),i.click()}initListener(){this.root.querySelector("#config-form")?.querySelectorAll("input").forEach((t=>{t.onchange=this.onConfigChange.bind(this)})),this.root.querySelector("#btn-download")?.addEventListener("click",this.downloadImage.bind(this),!1)}}customElements.define("ps-controller",e)})();
+        </script>
+
+    </div>
+
+</body>
+
+</html>
