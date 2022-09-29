@@ -1,75 +1,405 @@
 <!DOCTYPE html>
 <html>
-
-<head>
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
-        body {
-            padding: 0;
-            margin: 0;
-        }
+      body {
+        padding: 0;
+        margin: 0;
+      }
 
+      .root {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      @media (max-width: 1080px) {
         .root {
-            display: grid;
-            grid-template-columns: 3fr 1fr;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
+          display: flex;
+          flex-direction: column;
         }
+      }
 
-        .controller {
-            background-color: antiquewhite;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+      .controller {
+        flex: 1;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        overflow: auto;
+      }
 
+      .preview {
+        margin: auto;
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+
+      @media (max-width: 1080px) {
         .preview {
-            background-color: aqua;
-            margin: auto;
-            width: 100%;
-            height: 100vh;
-            overflow: hidden;
+          height: 350px;
         }
+      }
 
-        .cvs-wrapper {
-            width: 100%;
-            height: 100%;
-            background-color: black;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            position: relative;
-        }
+      .cvs-wrapper {
+        width: 100%;
+        height: 100%;
+        background-color: black;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+      }
 
-        #canvas {
-            cursor: all-scroll;
-            position: absolute;
-        }
+      #canvas {
+        cursor: all-scroll;
+        position: absolute;
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <div class="root">
-        <div class="preview">
-            <div class="cvs-wrapper">
-                <canvas id="canvas"></canvas>
-            </div>
+      <div class="preview">
+        <div class="cvs-wrapper">
+          <canvas id="canvas"></canvas>
         </div>
-        <div class="ps-controller">
-            <!-- <input type="file" accept="image/*" id="imgInput" />
-            <a role="button" id="download-btn">download</a> -->
-            <ps-controller canvas-id="canvas" />
-        </div>
+      </div>
+      <div class="controller">
+        <ps-controller canvas-id="canvas" />
+      </div>
+      
+                <script type="module">// src/drawer.ts
+function clearCanvans(ctx, cvs) {
+  ctx.save();
+  ctx.clearRect(0, 0, cvs.width, cvs.height);
+  ctx.restore();
+}
+function drawbg(ctx, cvs, bg) {
+  ctx.save();
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, cvs.width, cvs.height);
+  ctx.restore();
+}
+function draw(bitmap, ctx, cvs, config) {
+  clearCanvans(ctx, cvs);
+  cvs.width = !config.w || config.w <= 0 ? bitmap.width : config.w;
+  cvs.height = !config.h || config.h <= 0 ? bitmap.height : config.h;
+  drawbg(ctx, cvs, config.bg || "transparent");
+  const scaleW = bitmap.width / cvs.width;
+  const scaleH = bitmap.height / cvs.height;
+  const targetBitmapScale = scaleH > scaleW ? scaleH : scaleW;
+  const tW = bitmap.width / targetBitmapScale;
+  const tH = bitmap.height / targetBitmapScale;
+  let transX = (cvs.width - tW) / 2;
+  let transY = (cvs.height - tH) / 2;
+  ctx.save();
+  ctx.translate(transX, transY);
+  ctx.scale(1 / targetBitmapScale, 1 / targetBitmapScale);
+  ctx.drawImage(bitmap, 0, 0);
+  ctx.restore();
+}
+async function drawFile(canvas, file, config) {
+  const bitmap = await createImageBitmap(file);
+  const ctx = canvas.getContext("2d");
+  draw(bitmap, ctx, canvas, config);
+  return {
+    bitmap
+  };
+}
 
+// src/controller.ts
+var DEFAULT_DPI = 350;
+var TouchHelper = class {
+  constructor(ele) {
+    this.touchStart = false;
+    this.initX = 0;
+    this.initY = 0;
+    this.lastTouchX = 0;
+    this.lastTouchY = 0;
+    this.element = ele;
+    this.initX = this.element.offsetLeft;
+    this.initY = this.element.offsetTop;
+    this.element.addEventListener("mousedown", () => {
+      this.touchStart = true;
+    });
+    this.element.addEventListener("touchstart", (ev) => {
+      this.touchStart = true;
+      this.lastTouchX = ev.changedTouches[0].screenX;
+      this.lastTouchY = ev.changedTouches[0].screenY;
+    });
+    window.addEventListener("mouseup", () => {
+      this.touchStart = false;
+      this.lastTouchX = 0;
+      this.lastTouchY = 0;
+    });
+    window.addEventListener("touchend", () => {
+      this.touchStart = false;
+      this.lastTouchX = 0;
+      this.lastTouchY = 0;
+    });
+    window.addEventListener("touchcancel", () => {
+      this.touchStart = false;
+      this.lastTouchX = 0;
+      this.lastTouchY = 0;
+    });
+    this.element.addEventListener("mousemove", this.handleMove.bind(this), false);
+    this.element.addEventListener("touchmove", this.handleMove.bind(this), false);
+  }
+  resetPosition() {
+    this.element.style.left = "unset";
+    this.element.style.top = "unset";
+  }
+  handleMove(ev) {
+    if (!this.touchStart) {
+      return;
+    }
+    if (ev instanceof MouseEvent) {
+      const { movementX, movementY } = ev;
+      this.element.style.left = `${this.element.offsetLeft + movementX}px`;
+      this.element.style.top = `${this.element.offsetTop + movementY}px`;
+    } else if (ev instanceof TouchEvent) {
+      const { screenX, screenY } = ev.touches[0];
+      if (this.lastTouchX === 0 || this.lastTouchY === 0) {
+        this.lastTouchX = screenX;
+        this.lastTouchY = screenY;
+        return;
+      }
+      const dx = screenX - this.lastTouchX;
+      const dy = screenY - this.lastTouchY;
+      this.lastTouchX = screenX;
+      this.lastTouchY = screenY;
+      this.element.style.left = `${this.element.offsetLeft + dx}px`;
+      this.element.style.top = `${this.element.offsetTop + dy}px`;
+    }
+  }
+};
+var Controller = class extends HTMLElement {
+  constructor() {
+    super();
+    this.useDpi = false;
+    this.sr = this.attachShadow({ mode: "open" });
+    this.root = document.createElement("div");
+    this.initStyle();
+    this.initView();
+    this.initListener();
+  }
+  initStyle() {
+    const style = document.createElement("style");
+    style.textContent = `   
+            .form{
+                display: flex;
+                flex-direction: column;
+                padding: 24px
+            }
+            label{
+                margin-bottom: 4px
+            }
+            .form-row{
+                display: flex;
+                flex-direction: column;
+                margin: 12px 0 0 0
+            }
+            input[type=number]{
+                width: 120px
+            }
 
-        <script type="text/javascript">
-            (()=>{"use strict";class t{constructor(t){this.touchStart=!1,this.initX=0,this.initY=0,this.element=t,this.initX=this.element.offsetLeft,this.initY=this.element.offsetTop,this.element.addEventListener("mousedown",(()=>{this.touchStart=!0})),window.addEventListener("mouseup",(()=>{this.touchStart=!1})),this.element.addEventListener("mousemove",this.handleMove.bind(this),!1)}resetPosition(){this.element.style.left="unset",this.element.style.top="unset"}handleMove(t){if(!this.touchStart)return;const{movementX:e,movementY:i}=t;this.element.style.left=`${this.element.offsetLeft+e}px`,this.element.style.top=`${this.element.offsetTop+i}px`}}class e extends HTMLElement{constructor(){super(),this.useDpi=!1,this.sr=this.attachShadow({mode:"open"}),this.root=document.createElement("div"),this.initStyle(),this.initView(),this.initListener()}initStyle(){const t=document.createElement("style");t.textContent="   \n            .form{\n                display: flex;\n                flex-direction: column;\n                padding: 24px\n            }\n            label{\n                margin-bottom: 4px\n            }\n            .form-row{\n                display: flex;\n                flex-direction: column;\n                margin: 12px 0 0 0\n            }\n            input[type=number]{\n                width: 120px\n            }\n\n            #btn-download{\n                margin-top: 24px\n            }\n        ",this.sr.appendChild(t)}initView(){this.root.innerHTML='\n            <form class="form" id="config-form" onsubmit="return false">\n                <div class="form-row">\n                    <label for="file-sel">选择图片：</label>\n                    <input id=\'file-sel\' name="file" type=\'file\' accept=\'image/*\'></input>\n                </div>\n                <div class="form-row">\n                    <div>\n                        <label for="radio-re">按照分辨率</label>\n                        <input id="radio-re" checked type="radio" name="type" value="reso"></input>\n                        <label for="radio-sz">按照尺寸</label>\n                        <input type="radio" id="radio-sz" name="type" value="size"></input>\n                    </div>\n                </div>\n                <div class="form-row">\n                    <label for="resolution-s">设置分辨率(像素)：</label>\n                    <div>\n                        <input id=\'resolution-s\' name="resolution-s" type=\'number\'></input> x <input id=\'resolution-e\' name="resolution-e" type=\'number\'></input>\n                    </div>\n                </div>\n                <div class="form-row">\n                    <label for="inp-dpi">设置dpi：</label>\n                    <input id=\'inp-dpi\' value="350" name="dpi" type=\'number\'></input>\n                </div>\n                <div class="form-row">\n                    <label for="size-s">设置尺寸(英寸)：</label>\n                    <div>\n                        <input id=\'size-s\' name="size-s" type=\'number\'></input> x <input id=\'size-e\' name="size-e" type=\'number\'></input>\n                    </div>\n                </div>\n                <button id=\'btn-download\'>下载</button>\n            </form>\n        ',this.inputResolutionS=this.root.querySelector("#resolution-s"),this.inputResolutionE=this.root.querySelector("#resolution-e"),this.inputSizeS=this.root.querySelector("#size-s"),this.inputSizeE=this.root.querySelector("#size-e"),this.inputFile=this.root.querySelector("#file-sel"),this.inputDpi=this.root.querySelector("#inp-dpi"),this.downloadBtn=this.root.querySelector("#btn-download"),this.sr.appendChild(this.root),this.touchHelper=new t(this.getTargetCanvas()),this.disableDownload(),this.swithToSize(!1)}disableDownload(){this.downloadBtn.disabled=!0}enableDownload(){this.downloadBtn.disabled=!1}parseAbsNumber(t,e=0){return"string"==typeof t&&(t=Number(t)),t?t<=0?e:t:e}setValueByDpi(){const t=this.parseAbsNumber(this.inputDpi.value,350),e=this.parseAbsNumber(this.inputSizeS.value),i=this.parseAbsNumber(this.inputSizeE.value);this.inputResolutionS.value=String(Math.ceil(t*e)),this.inputResolutionE.value=String(Math.ceil(t*i))}setValueByRes(){this.inputDpi.value||(this.inputDpi.value=String(350));const t=this.parseAbsNumber(this.inputDpi.value,350),e=this.parseAbsNumber(this.inputResolutionS.value),i=this.parseAbsNumber(this.inputResolutionE.value);this.inputSizeS.value=String(Number(e/t).toPrecision(2)),this.inputSizeE.value=String(Number(i/t).toPrecision(2))}setRes(t,e){this.inputResolutionS.value=String(t),this.inputResolutionE.value=String(e),this.setValueByRes()}swithToSize(t=!1){this.useDpi?this.setValueByDpi():this.setValueByRes(),this.useDpi=t,this.inputResolutionE.disabled=t,this.inputResolutionS.disabled=t,this.inputDpi.disabled=!t,this.inputSizeE.disabled=!t,this.inputSizeS.disabled=!t}collectFormData(){const t={};return this.root.querySelector("#config-form")?.querySelectorAll("input").forEach((e=>{const i=e.getAttribute("name");if(!i)return;const n=e.getAttribute("type");t[i]="file"===n?e.files?.[0]:e.value})),t}getTargetCanvas(){const t=this.getAttribute("canvas-id");if(!t)return;const e=document.querySelector(`#${t}`);if(!(e&&e instanceof HTMLCanvasElement))throw new Error(`${this.getAttribute("canvas-id")} not canvas`);return e}async onConfigChange(t){const e=t.target;if("type"===e.name)return void this.swithToSize("size"===e.value);const i=this.getTargetCanvas(),n=this.collectFormData();let s=n["resolution-s"],o=n["resolution-e"];const l=n.dpi,r=n["size-s"],a=n["size-e"];if(this.useDpi&&(s=r*l,o=a*l,this.inputResolutionE.value=String(parseInt(o)),this.inputResolutionS.value=String(parseInt(s))),!n.file)return;const u={w:parseInt(s,10)||0,h:parseInt(o,10)||0,bg:"black"};this.disableDownload(),this.touchHelper?.resetPosition();const{bitmap:h}=await async function(t,e,i){const n=await createImageBitmap(e);return function(t,e,i,n){!function(t,e){t.save(),t.clearRect(0,0,e.width,e.height),t.restore()}(e,i),i.width=!n.w||n.w<=0?t.width:n.w,i.height=!n.h||n.h<=0?t.height:n.h,function(t,e,i){t.save(),t.fillStyle=i,t.fillRect(0,0,e.width,e.height),t.restore()}(e,i,n.bg||"transparent");const s=t.width/i.width,o=t.height/i.height,l=o>s?o:s,r=t.width/l,a=t.height/l;let u=(i.width-r)/2,h=(i.height-a)/2;e.save(),e.translate(u,h),e.scale(1/l,1/l),e.drawImage(t,0,0),e.restore()}(n,t.getContext("2d"),t,i),{bitmap:n}}(i,n.file,u);this.setRes(u.w||h.width,u.h||h.height),this.enableDownload()}downloadImage(){const t=this.inputFile.files?.[0]?.name;if(!t)return;const e=this.getTargetCanvas(),i=document.createElement("a");i.addEventListener("click",(()=>{i.href=e.toDataURL(),i.download=`${this.inputResolutionS?.value}x${this.inputResolutionE.value}_${this.inputSizeS.value}x${this.inputSizeE.value}_${this.inputDpi.value}dpi_${t}`}),!1),i.click()}initListener(){this.root.querySelector("#config-form")?.querySelectorAll("input").forEach((t=>{t.onchange=this.onConfigChange.bind(this)})),this.root.querySelector("#btn-download")?.addEventListener("click",this.downloadImage.bind(this),!1)}}customElements.define("ps-controller",e)})();
-        </script>
-
+            #btn-download{
+                margin-top: 24px
+            }
+        `;
+    this.sr.appendChild(style);
+  }
+  initView() {
+    this.root.innerHTML = `
+            <form class="form" id="config-form" onsubmit="return false">
+                <div class="form-row">
+                    <label for="file-sel">\u9009\u62E9\u56FE\u7247\uFF1A</label>
+                    <input id='file-sel' name="file" type='file' accept='image/*'></input>
+                </div>
+                <div class="form-row">
+                    <div>
+                        <label for="radio-re">\u6309\u7167\u5206\u8FA8\u7387</label>
+                        <input id="radio-re" checked type="radio" name="type" value="reso"></input>
+                        <label for="radio-sz">\u6309\u7167\u5C3A\u5BF8</label>
+                        <input type="radio" id="radio-sz" name="type" value="size"></input>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label for="resolution-s">\u8BBE\u7F6E\u5206\u8FA8\u7387(\u50CF\u7D20)\uFF1A</label>
+                    <div>
+                        <input id='resolution-s' name="resolution-s" type='number'></input> x <input id='resolution-e' name="resolution-e" type='number'></input>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label for="inp-dpi">\u8BBE\u7F6Edpi\uFF1A</label>
+                    <input id='inp-dpi' value="${DEFAULT_DPI}" name="dpi" type='number'></input>
+                </div>
+                <div class="form-row">
+                    <label for="size-s">\u8BBE\u7F6E\u5C3A\u5BF8(\u82F1\u5BF8)\uFF1A</label>
+                    <div>
+                        <input id='size-s' name="size-s" type='number'></input> x <input id='size-e' name="size-e" type='number'></input>
+                    </div>
+                </div>
+                <button id='btn-download'>\u4E0B\u8F7D</button>
+            </form>
+        `;
+    this.inputResolutionS = this.root.querySelector("#resolution-s");
+    this.inputResolutionE = this.root.querySelector("#resolution-e");
+    this.inputSizeS = this.root.querySelector("#size-s");
+    this.inputSizeE = this.root.querySelector("#size-e");
+    this.inputFile = this.root.querySelector("#file-sel");
+    this.inputDpi = this.root.querySelector("#inp-dpi");
+    this.downloadBtn = this.root.querySelector("#btn-download");
+    this.sr.appendChild(this.root);
+    this.touchHelper = new TouchHelper(this.getTargetCanvas());
+    this.disableDownload();
+    this.swithToSize(false);
+  }
+  disableDownload() {
+    this.downloadBtn.disabled = true;
+  }
+  enableDownload() {
+    this.downloadBtn.disabled = false;
+  }
+  parseAbsNumber(val, def = 0) {
+    if (typeof val === "string") {
+      val = Number(val);
+    }
+    if (!val) {
+      return def;
+    }
+    if (val <= 0) {
+      return def;
+    }
+    return val;
+  }
+  setValueByDpi() {
+    const dpi = this.parseAbsNumber(this.inputDpi.value, DEFAULT_DPI);
+    const sw = this.parseAbsNumber(this.inputSizeS.value);
+    const sh = this.parseAbsNumber(this.inputSizeE.value);
+    this.inputResolutionS.value = String(Math.ceil(dpi * sw));
+    this.inputResolutionE.value = String(Math.ceil(dpi * sh));
+  }
+  setValueByRes() {
+    if (!this.inputDpi.value) {
+      this.inputDpi.value = String(DEFAULT_DPI);
+    }
+    const dpi = this.parseAbsNumber(this.inputDpi.value, DEFAULT_DPI);
+    const rw = this.parseAbsNumber(this.inputResolutionS.value);
+    const rh = this.parseAbsNumber(this.inputResolutionE.value);
+    this.inputSizeS.value = String(Number(rw / dpi).toPrecision(2));
+    this.inputSizeE.value = String(Number(rh / dpi).toPrecision(2));
+  }
+  setRes(w, h) {
+    this.inputResolutionS.value = String(w);
+    this.inputResolutionE.value = String(h);
+    this.setValueByRes();
+  }
+  swithToSize(size = false) {
+    if (this.useDpi) {
+      this.setValueByDpi();
+    } else {
+      this.setValueByRes();
+    }
+    this.useDpi = size;
+    this.inputResolutionE.disabled = size;
+    this.inputResolutionS.disabled = size;
+    this.inputDpi.disabled = !size;
+    this.inputSizeE.disabled = !size;
+    this.inputSizeS.disabled = !size;
+  }
+  collectFormData() {
+    const formData = {};
+    this.root.querySelector("#config-form")?.querySelectorAll("input").forEach((ele) => {
+      const name = ele.getAttribute("name");
+      if (!name) {
+        return;
+      }
+      const type = ele.getAttribute("type");
+      if (type === "file") {
+        formData[name] = ele.files?.[0];
+      } else {
+        formData[name] = ele.value;
+      }
+    });
+    return formData;
+  }
+  getTargetCanvas() {
+    const canvasId = this.getAttribute("canvas-id");
+    if (!canvasId) {
+      return;
+    }
+    const canvas = document.querySelector(`#${canvasId}`);
+    if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
+      throw new Error(`${this.getAttribute("canvas-id")} not canvas`);
+    }
+    return canvas;
+  }
+  async onConfigChange(ev) {
+    const input = ev.target;
+    if (input.name === "type") {
+      this.swithToSize(input.value === "size");
+      return;
+    }
+    const canvas = this.getTargetCanvas();
+    const config = this.collectFormData();
+    let resolutionS = config["resolution-s"];
+    let resolutionE = config["resolution-e"];
+    const dpi = config["dpi"];
+    const sizeS = config["size-s"];
+    const sizeE = config["size-e"];
+    if (this.useDpi) {
+      resolutionS = sizeS * dpi;
+      resolutionE = sizeE * dpi;
+      this.inputResolutionE.value = String(parseInt(resolutionE));
+      this.inputResolutionS.value = String(parseInt(resolutionS));
+    }
+    if (!config.file) {
+      return;
+    }
+    const drawConfig = {
+      w: parseInt(resolutionS, 10) || 0,
+      h: parseInt(resolutionE, 10) || 0,
+      bg: "black"
+    };
+    this.disableDownload();
+    this.touchHelper?.resetPosition();
+    const { bitmap } = await drawFile(canvas, config.file, drawConfig);
+    this.setRes(drawConfig.w || bitmap.width, drawConfig.h || bitmap.height);
+    this.enableDownload();
+  }
+  downloadImage() {
+    const fileName = this.inputFile.files?.[0]?.name;
+    if (!fileName) {
+      return;
+    }
+    const canvas = this.getTargetCanvas();
+    const a = document.createElement("a");
+    a.addEventListener("click", () => {
+      a.href = canvas.toDataURL();
+      a.download = `${this.inputResolutionS?.value}x${this.inputResolutionE.value}_${this.inputSizeS.value}x${this.inputSizeE.value}_${this.inputDpi.value}dpi_${fileName}`;
+    }, false);
+    a.click();
+  }
+  initListener() {
+    this.root.querySelector("#config-form")?.querySelectorAll("input").forEach((ele) => {
+      ele.onchange = this.onConfigChange.bind(this);
+    });
+    this.root.querySelector("#btn-download")?.addEventListener("click", this.downloadImage.bind(this), false);
+  }
+};
+customElements.define("ps-controller", Controller);
+</script>
+            
     </div>
-
-</body>
-
+  </body>
 </html>
