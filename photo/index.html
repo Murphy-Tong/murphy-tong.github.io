@@ -3,81 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <style>
-      body {
-        padding: 0;
-        margin: 0;
-      }
-
-      .root {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-      }
-
-      @media (max-width: 1080px) {
-        .root {
-          display: flex;
-          flex-direction: column;
-        }
-      }
-
-      .controller {
-        flex: 1;
-        flex-shrink: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 100%;
-        overflow: auto;
-      }
-
-      .preview {
-        margin: auto;
-        width: 100%;
-        height: 100vh;
-        overflow: hidden;
-        flex-shrink: 0;
-      }
-
-      @media (max-width: 1080px) {
-        .preview {
-          height: 350px;
-        }
-      }
-
-      .cvs-wrapper {
-        width: 100%;
-        height: 100%;
-        background-color: black;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        position: relative;
-      }
-
-      #canvas {
-        cursor: all-scroll;
-        position: absolute;
-      }
-    </style>
-  </head>
-
-  <body>
-    <div class="root">
-      <div class="preview">
-        <div class="cvs-wrapper">
-          <canvas id="canvas"></canvas>
-        </div>
-      </div>
-      <div class="controller">
-        <ps-controller canvas-id="canvas" />
-      </div>
-      
-                <script type="module">// src/drawer.ts
+    <!-- <script
+      src="http://hammerjs.github.io/dist/hammer.min.js"
+      type="text/javascript"
+      defer
+    ></script> -->
+    
+                <script type="module" defer>// src/drawer.ts
 function clearCanvans(ctx, cvs) {
   ctx.save();
   ctx.clearRect(0, 0, cvs.width, cvs.height);
@@ -229,7 +161,7 @@ var Controller = class extends HTMLElement {
                     <div>
                         <label for="radio-re">\u6309\u7167\u5206\u8FA8\u7387</label>
                         <input id="radio-re" checked type="radio" name="type" value="reso"></input>
-                        <label for="radio-sz">\u6309\u7167\u5C3A\u5BF8</label>
+                        <label for="radio-sz" style="margin-left: 12px">\u6309\u7167\u5C3A\u5BF8</label>
                         <input type="radio" id="radio-sz" name="type" value="size"></input>
                     </div>
                 </div>
@@ -400,6 +332,77 @@ var Controller = class extends HTMLElement {
 customElements.define("ps-controller", Controller);
 </script>
             
+
+    <style>
+      body {
+        padding: 0;
+        margin: 0;
+      }
+
+      .root {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      @media (max-width: 1080px) {
+        .root {
+          display: flex;
+          flex-direction: column;
+        }
+      }
+
+      .controller {
+        flex: 1;
+        flex-shrink: 0;
+        display: flex;
+        overflow: auto;
+      }
+
+      .preview {
+        margin: auto;
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+
+      @media (max-width: 1080px) {
+        .preview {
+          height: 350px;
+        }
+      }
+
+      .cvs-wrapper {
+        width: 100%;
+        height: 100%;
+        background-color: black;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+      }
+
+      #canvas {
+        cursor: all-scroll;
+        position: absolute;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="root">
+      <div class="preview">
+        <div class="cvs-wrapper">
+          <canvas id="canvas"></canvas>
+        </div>
+      </div>
+      <div class="controller">
+        <ps-controller canvas-id="canvas" />
+      </div>
     </div>
   </body>
 </html>
