@@ -9,124 +9,7 @@
       defer
     ></script> -->
     
-                <script type="module" defer>// src/drawer.ts
-function clearCanvans(ctx, cvs) {
-  ctx.save();
-  ctx.clearRect(0, 0, cvs.width, cvs.height);
-  ctx.restore();
-}
-function drawbg(ctx, cvs, bg) {
-  ctx.save();
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, cvs.width, cvs.height);
-  ctx.restore();
-}
-function draw(bitmap, ctx, cvs, config) {
-  clearCanvans(ctx, cvs);
-  cvs.width = !config.w || config.w <= 0 ? bitmap.width : config.w;
-  cvs.height = !config.h || config.h <= 0 ? bitmap.height : config.h;
-  drawbg(ctx, cvs, config.bg || "transparent");
-  const scaleW = bitmap.width / cvs.width;
-  const scaleH = bitmap.height / cvs.height;
-  const targetBitmapScale = scaleH > scaleW ? scaleH : scaleW;
-  const tW = bitmap.width / targetBitmapScale;
-  const tH = bitmap.height / targetBitmapScale;
-  let transX = (cvs.width - tW) / 2;
-  let transY = (cvs.height - tH) / 2;
-  ctx.save();
-  ctx.translate(transX, transY);
-  ctx.scale(1 / targetBitmapScale, 1 / targetBitmapScale);
-  ctx.drawImage(bitmap, 0, 0);
-  ctx.restore();
-}
-async function drawFile(canvas, file, config) {
-  const bitmap = await createImageBitmap(file);
-  const ctx = canvas.getContext("2d");
-  draw(bitmap, ctx, canvas, config);
-  return {
-    bitmap
-  };
-}
-
-// src/controller.ts
-var DEFAULT_DPI = 350;
-var TouchHelper = class {
-  constructor(ele) {
-    this.touchStart = false;
-    this.initX = 0;
-    this.initY = 0;
-    this.lastTouchX = 0;
-    this.lastTouchY = 0;
-    this.element = ele;
-    this.initX = this.element.offsetLeft;
-    this.initY = this.element.offsetTop;
-    this.element.addEventListener("mousedown", () => {
-      this.touchStart = true;
-    });
-    this.element.addEventListener("touchstart", (ev) => {
-      this.touchStart = true;
-      this.lastTouchX = ev.changedTouches[0].screenX;
-      this.lastTouchY = ev.changedTouches[0].screenY;
-    });
-    window.addEventListener("mouseup", () => {
-      this.touchStart = false;
-      this.lastTouchX = 0;
-      this.lastTouchY = 0;
-    });
-    window.addEventListener("touchend", () => {
-      this.touchStart = false;
-      this.lastTouchX = 0;
-      this.lastTouchY = 0;
-    });
-    window.addEventListener("touchcancel", () => {
-      this.touchStart = false;
-      this.lastTouchX = 0;
-      this.lastTouchY = 0;
-    });
-    this.element.addEventListener("mousemove", this.handleMove.bind(this), false);
-    this.element.addEventListener("touchmove", this.handleMove.bind(this), false);
-  }
-  resetPosition() {
-    this.element.style.left = "unset";
-    this.element.style.top = "unset";
-  }
-  handleMove(ev) {
-    if (!this.touchStart) {
-      return;
-    }
-    if (ev instanceof MouseEvent) {
-      const { movementX, movementY } = ev;
-      this.element.style.left = `${this.element.offsetLeft + movementX}px`;
-      this.element.style.top = `${this.element.offsetTop + movementY}px`;
-    } else if (ev instanceof TouchEvent) {
-      const { screenX, screenY } = ev.touches[0];
-      if (this.lastTouchX === 0 || this.lastTouchY === 0) {
-        this.lastTouchX = screenX;
-        this.lastTouchY = screenY;
-        return;
-      }
-      const dx = screenX - this.lastTouchX;
-      const dy = screenY - this.lastTouchY;
-      this.lastTouchX = screenX;
-      this.lastTouchY = screenY;
-      this.element.style.left = `${this.element.offsetLeft + dx}px`;
-      this.element.style.top = `${this.element.offsetTop + dy}px`;
-    }
-  }
-};
-var Controller = class extends HTMLElement {
-  constructor() {
-    super();
-    this.useDpi = false;
-    this.sr = this.attachShadow({ mode: "open" });
-    this.root = document.createElement("div");
-    this.initStyle();
-    this.initView();
-    this.initListener();
-  }
-  initStyle() {
-    const style = document.createElement("style");
-    style.textContent = `   
+                <script type="module" defer>function w(n,i){n.save(),n.clearRect(0,0,i.width,i.height),n.restore()}function v(n,i,t){n.save(),n.fillStyle=t,n.fillRect(0,0,i.width,i.height),n.restore()}function g(n,i,t,e){w(i,t),t.width=!e.w||e.w<=0?n.width:e.w,t.height=!e.h||e.h<=0?n.height:e.h,v(i,t,e.bg||"transparent");let s=n.width/t.width,o=n.height/t.height,a=o>s?o:s,r=n.width/a,l=n.height/a,h=(t.width-r)/2,p=(t.height-l)/2;i.save(),i.translate(h,p),i.scale(1/a,1/a),i.drawImage(n,0,0),i.restore()}async function b(n,i,t){let e=await createImageBitmap(i),s=n.getContext("2d");return g(e,s,n,t),{bitmap:e}}var u=350,c=class{constructor(i){this.touchStart=!1;this.initX=0;this.initY=0;this.lastTouchX=0;this.lastTouchY=0;this.element=i,this.initX=this.element.offsetLeft,this.initY=this.element.offsetTop,this.element.addEventListener("mousedown",()=>{this.touchStart=!0}),this.element.addEventListener("touchstart",t=>{this.touchStart=!0,this.lastTouchX=t.changedTouches[0].screenX,this.lastTouchY=t.changedTouches[0].screenY}),window.addEventListener("mouseup",()=>{this.touchStart=!1,this.lastTouchX=0,this.lastTouchY=0}),window.addEventListener("touchend",()=>{this.touchStart=!1,this.lastTouchX=0,this.lastTouchY=0}),window.addEventListener("touchcancel",()=>{this.touchStart=!1,this.lastTouchX=0,this.lastTouchY=0}),this.element.addEventListener("mousemove",this.handleMove.bind(this),!1),this.element.addEventListener("touchmove",this.handleMove.bind(this),!1)}resetPosition(){this.element.style.left="unset",this.element.style.top="unset"}handleMove(i){if(!!this.touchStart){if(i instanceof MouseEvent){let{movementX:t,movementY:e}=i;this.element.style.left=`${this.element.offsetLeft+t}px`,this.element.style.top=`${this.element.offsetTop+e}px`}else if(i instanceof TouchEvent){let{screenX:t,screenY:e}=i.touches[0];if(this.lastTouchX===0||this.lastTouchY===0){this.lastTouchX=t,this.lastTouchY=e;return}let s=t-this.lastTouchX,o=e-this.lastTouchY;this.lastTouchX=t,this.lastTouchY=e,this.element.style.left=`${this.element.offsetLeft+s}px`,this.element.style.top=`${this.element.offsetTop+o}px`}}}},m=class extends HTMLElement{constructor(){super();this.useDpi=!1;this.sr=this.attachShadow({mode:"open"}),this.root=document.createElement("div"),this.initStyle(),this.initView(),this.initListener()}initStyle(){let t=document.createElement("style");t.textContent=`   
             .form{
                 display: flex;
                 flex-direction: column;
@@ -147,11 +30,7 @@ var Controller = class extends HTMLElement {
             #btn-download{
                 margin-top: 24px
             }
-        `;
-    this.sr.appendChild(style);
-  }
-  initView() {
-    this.root.innerHTML = `
+        `,this.sr.appendChild(t)}initView(){this.root.innerHTML=`
             <form class="form" id="config-form" onsubmit="return false">
                 <div class="form-row">
                     <label for="file-sel">\u9009\u62E9\u56FE\u7247\uFF1A</label>
@@ -173,7 +52,7 @@ var Controller = class extends HTMLElement {
                 </div>
                 <div class="form-row">
                     <label for="inp-dpi">\u8BBE\u7F6Edpi\uFF1A</label>
-                    <input id='inp-dpi' value="${DEFAULT_DPI}" name="dpi" type='number'></input>
+                    <input id='inp-dpi' value="${u}" name="dpi" type='number'></input>
                 </div>
                 <div class="form-row">
                     <label for="size-s">\u8BBE\u7F6E\u5C3A\u5BF8(\u82F1\u5BF8)\uFF1A</label>
@@ -183,156 +62,11 @@ var Controller = class extends HTMLElement {
                 </div>
                 <button id='btn-download'>\u4E0B\u8F7D</button>
             </form>
-        `;
-    this.inputResolutionS = this.root.querySelector("#resolution-s");
-    this.inputResolutionE = this.root.querySelector("#resolution-e");
-    this.inputSizeS = this.root.querySelector("#size-s");
-    this.inputSizeE = this.root.querySelector("#size-e");
-    this.inputFile = this.root.querySelector("#file-sel");
-    this.inputDpi = this.root.querySelector("#inp-dpi");
-    this.downloadBtn = this.root.querySelector("#btn-download");
-    this.sr.appendChild(this.root);
-    this.touchHelper = new TouchHelper(this.getTargetCanvas());
-    this.disableDownload();
-    this.swithToSize(false);
-  }
-  disableDownload() {
-    this.downloadBtn.disabled = true;
-  }
-  enableDownload() {
-    this.downloadBtn.disabled = false;
-  }
-  parseAbsNumber(val, def = 0) {
-    if (typeof val === "string") {
-      val = Number(val);
-    }
-    if (!val) {
-      return def;
-    }
-    if (val <= 0) {
-      return def;
-    }
-    return val;
-  }
-  setValueByDpi() {
-    const dpi = this.parseAbsNumber(this.inputDpi.value, DEFAULT_DPI);
-    const sw = this.parseAbsNumber(this.inputSizeS.value);
-    const sh = this.parseAbsNumber(this.inputSizeE.value);
-    this.inputResolutionS.value = String(Math.ceil(dpi * sw));
-    this.inputResolutionE.value = String(Math.ceil(dpi * sh));
-  }
-  setValueByRes() {
-    if (!this.inputDpi.value) {
-      this.inputDpi.value = String(DEFAULT_DPI);
-    }
-    const dpi = this.parseAbsNumber(this.inputDpi.value, DEFAULT_DPI);
-    const rw = this.parseAbsNumber(this.inputResolutionS.value);
-    const rh = this.parseAbsNumber(this.inputResolutionE.value);
-    this.inputSizeS.value = String(Number(rw / dpi).toPrecision(2));
-    this.inputSizeE.value = String(Number(rh / dpi).toPrecision(2));
-  }
-  setRes(w, h) {
-    this.inputResolutionS.value = String(w);
-    this.inputResolutionE.value = String(h);
-    this.setValueByRes();
-  }
-  swithToSize(size = false) {
-    if (this.useDpi) {
-      this.setValueByDpi();
-    } else {
-      this.setValueByRes();
-    }
-    this.useDpi = size;
-    this.inputResolutionE.disabled = size;
-    this.inputResolutionS.disabled = size;
-    this.inputDpi.disabled = !size;
-    this.inputSizeE.disabled = !size;
-    this.inputSizeS.disabled = !size;
-  }
-  collectFormData() {
-    const formData = {};
-    this.root.querySelector("#config-form")?.querySelectorAll("input").forEach((ele) => {
-      const name = ele.getAttribute("name");
-      if (!name) {
-        return;
-      }
-      const type = ele.getAttribute("type");
-      if (type === "file") {
-        formData[name] = ele.files?.[0];
-      } else {
-        formData[name] = ele.value;
-      }
-    });
-    return formData;
-  }
-  getTargetCanvas() {
-    const canvasId = this.getAttribute("canvas-id");
-    if (!canvasId) {
-      return;
-    }
-    const canvas = document.querySelector(`#${canvasId}`);
-    if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
-      throw new Error(`${this.getAttribute("canvas-id")} not canvas`);
-    }
-    return canvas;
-  }
-  async onConfigChange(ev) {
-    const input = ev.target;
-    if (input.name === "type") {
-      this.swithToSize(input.value === "size");
-      return;
-    }
-    const canvas = this.getTargetCanvas();
-    const config = this.collectFormData();
-    let resolutionS = config["resolution-s"];
-    let resolutionE = config["resolution-e"];
-    const dpi = config["dpi"];
-    const sizeS = config["size-s"];
-    const sizeE = config["size-e"];
-    if (this.useDpi) {
-      resolutionS = sizeS * dpi;
-      resolutionE = sizeE * dpi;
-      this.inputResolutionE.value = String(parseInt(resolutionE));
-      this.inputResolutionS.value = String(parseInt(resolutionS));
-    }
-    if (!config.file) {
-      return;
-    }
-    const drawConfig = {
-      w: parseInt(resolutionS, 10) || 0,
-      h: parseInt(resolutionE, 10) || 0,
-      bg: "black"
-    };
-    this.disableDownload();
-    this.touchHelper?.resetPosition();
-    const { bitmap } = await drawFile(canvas, config.file, drawConfig);
-    this.setRes(drawConfig.w || bitmap.width, drawConfig.h || bitmap.height);
-    this.enableDownload();
-  }
-  downloadImage() {
-    const fileName = this.inputFile.files?.[0]?.name;
-    if (!fileName) {
-      return;
-    }
-    const canvas = this.getTargetCanvas();
-    const a = document.createElement("a");
-    a.addEventListener("click", () => {
-      a.href = canvas.toDataURL();
-      a.download = `${this.inputResolutionS?.value}x${this.inputResolutionE.value}_${this.inputSizeS.value}x${this.inputSizeE.value}_${this.inputDpi.value}dpi_${fileName}`;
-    }, false);
-    a.click();
-  }
-  initListener() {
-    this.root.querySelector("#config-form")?.querySelectorAll("input").forEach((ele) => {
-      ele.onchange = this.onConfigChange.bind(this);
-    });
-    this.root.querySelector("#btn-download")?.addEventListener("click", this.downloadImage.bind(this), false);
-  }
-};
-customElements.define("ps-controller", Controller);
+        `,this.inputResolutionS=this.root.querySelector("#resolution-s"),this.inputResolutionE=this.root.querySelector("#resolution-e"),this.inputSizeS=this.root.querySelector("#size-s"),this.inputSizeE=this.root.querySelector("#size-e"),this.inputFile=this.root.querySelector("#file-sel"),this.inputDpi=this.root.querySelector("#inp-dpi"),this.downloadBtn=this.root.querySelector("#btn-download"),this.sr.appendChild(this.root),this.touchHelper=new c(this.getTargetCanvas()),this.disableDownload(),this.swithToSize(!1)}disableDownload(){this.downloadBtn.disabled=!0}enableDownload(){this.downloadBtn.disabled=!1}parseAbsNumber(t,e=0){return typeof t=="string"&&(t=Number(t)),!t||t<=0?e:t}setValueByDpi(){let t=this.parseAbsNumber(this.inputDpi.value,u),e=this.parseAbsNumber(this.inputSizeS.value),s=this.parseAbsNumber(this.inputSizeE.value);this.inputResolutionS.value=String(Math.ceil(t*e)),this.inputResolutionE.value=String(Math.ceil(t*s))}setValueByRes(){this.inputDpi.value||(this.inputDpi.value=String(u));let t=this.parseAbsNumber(this.inputDpi.value,u),e=this.parseAbsNumber(this.inputResolutionS.value),s=this.parseAbsNumber(this.inputResolutionE.value);this.inputSizeS.value=String(Number(e/t).toPrecision(2)),this.inputSizeE.value=String(Number(s/t).toPrecision(2))}setRes(t,e){this.inputResolutionS.value=String(t),this.inputResolutionE.value=String(e),this.setValueByRes()}swithToSize(t=!1){this.useDpi?this.setValueByDpi():this.setValueByRes(),this.useDpi=t,this.inputResolutionE.disabled=t,this.inputResolutionS.disabled=t,this.inputDpi.disabled=!t,this.inputSizeE.disabled=!t,this.inputSizeS.disabled=!t}collectFormData(){let t={};return this.root.querySelector("#config-form")?.querySelectorAll("input").forEach(e=>{let s=e.getAttribute("name");if(!s)return;e.getAttribute("type")==="file"?t[s]=e.files?.[0]:t[s]=e.value}),t}getTargetCanvas(){let t=this.getAttribute("canvas-id");if(!t)return;let e=document.querySelector(`#${t}`);if(!e||!(e instanceof HTMLCanvasElement))throw new Error(`${this.getAttribute("canvas-id")} not canvas`);return e}async onConfigChange(t){let e=t.target;if(e.name==="type"){this.swithToSize(e.value==="size");return}let s=this.getTargetCanvas(),o=this.collectFormData(),a=o["resolution-s"],r=o["resolution-e"],l=o.dpi,h=o["size-s"],p=o["size-e"];if(this.useDpi&&(a=h*l,r=p*l,this.inputResolutionE.value=String(parseInt(r)),this.inputResolutionS.value=String(parseInt(a))),!o.file)return;let d={w:parseInt(a,10)||0,h:parseInt(r,10)||0,bg:"black"};this.disableDownload(),this.touchHelper?.resetPosition();let{bitmap:f}=await b(s,o.file,d);this.setRes(d.w||f.width,d.h||f.height),this.enableDownload()}downloadImage(){let t=this.inputFile.files?.[0]?.name;if(!t)return;let e=this.getTargetCanvas(),s=document.createElement("a");s.addEventListener("click",()=>{s.href=e.toDataURL(),s.download=`${this.inputResolutionS?.value}x${this.inputResolutionE.value}_${this.inputSizeS.value}x${this.inputSizeE.value}_${this.inputDpi.value}dpi_${t}`},!1),s.click()}initListener(){this.root.querySelector("#config-form")?.querySelectorAll("input").forEach(t=>{t.onchange=this.onConfigChange.bind(this)}),this.root.querySelector("#btn-download")?.addEventListener("click",this.downloadImage.bind(this),!1)}};customElements.define("ps-controller",m);
 </script>
             
 
+    
     <style>
       body {
         padding: 0;
