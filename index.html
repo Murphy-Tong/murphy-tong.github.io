@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8" />
+<meta http-equiv="cache-control" content="no-store" />
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" name="viewport" />
+
+<head>
+    <script src="https://unpkg.com/vue"></script>
+    <!-- <script src="https://unpkg.com/naive-ui"></script> -->
+    <script src="https://unpkg.com/naive-ui@2.38.1/dist/index.prod.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.1/math.js"></script>
+</head>
+
+<!-- // y = 2x + 5.77 | .52 +2.08 -->
+<!-- // y = 2x + 6.25 | .48 -2.08 -->
+
+<body>
+    <style>
+                #app{
+            height: 100vh;
+        }
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 32px;
+            gap: 24px;
+            height: 100vh;
+            overflow: scroll;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid;
+        }
+
+        table {
+            margin: 0 auto;
+            display: block;
+            overflow-x: auto;
+            border-spacing: 0;
+        }
+
+        tbody {
+            white-space: nowrap;
+        }
+
+        th,
+        td {
+            padding: 5px 10px;
+            border-top-width: 0;
+            border-left-width: 0;
+        }
+
+        th {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            vertical-align: bottom;
+        }
+
+        th:last-child,
+        td:last-child {
+            border-right-width: 0;
+        }
+
+        tr:last-child td {
+            border-bottom-width: 0;
+        }
+        .n-card__content{
+            display: flex;
+            flex-direction: column;
+        }
+        .n-float-button .n-float-button__body{
+            padding: 0;
+        }
+    </style>
+    <template id="product">
+        <div style="display: flex;width: 100%;; align-items: center;margin-bottom: 24px;">
+            <label style="flex-shrink: 0;">商品名称：</label>
+            <n-input placeholder="商品名称" style="flex:5;margin-right: 60px;" ></n-input>
+            <label style="flex-shrink: 0;">发货价：</label>
+            <n-input-number v-model:value="inputPrice" clearable class="jinjia" style="flex:2" placeholder="输入拿货价"></n-input-number>
+        </div>
+        <table :bordered="true" :single-line="false">
+            <tr>
+                <th>正价调整</th>
+                <th>进价(元)</th>
+                <th>低价 sku 定价 / 到手价 / 利润 (元)</th>
+                <th>普通 sku 定价 / 到手价 / 利润 (元)</th>
+                <th>优惠券(元)</th>
+            </tr>
+            <template v-for="(item) in tabDatas" :key="item.title">
+                <tr>
+                    <td>{{item.title}}</td>
+                    <td>{{item.jinjia}}</td>
+                    <td>{{item.priceYLSKU}}</td>
+                    <td>{{item.priceNormalSKU}}</td>
+                    <td>{{item.youhuiquanAmount}}</td>
+                </tr>
+            </template>
+        </table>
+    </template>
+    <div id="app">
+        <div class="content">
+            <template v-for="item in data" :key="item">
+                <n-card closable @close="handleClose(data)" >
+                    <Product />
+                </n-card>
+            </template>
+        </div>
+        <n-float-button :right="64" :bottom="124" shape="square" @click="addProduct">
+            <n-icon size="40">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                  <path
+                    d="M368.5 240H272v-96.5c0-8.8-7.2-16-16-16s-16 7.2-16 16V240h-96.5c-8.8 0-16 7.2-16 16 0 4.4 1.8 8.4 4.7 11.3 2.9 2.9 6.9 4.7 11.3 4.7H240v96.5c0 4.4 1.8 8.4 4.7 11.3 2.9 2.9 6.9 4.7 11.3 4.7 8.8 0 16-7.2 16-16V272h96.5c8.8 0 16-7.2 16-16s-7.2-16-16-16z"
+                  />
+                </svg>
+              </n-icon>
+          </n-float-button>
+    </div>
+    <script>
+        const Product = Vue.defineComponent({
+            template: "#product",
+            setup() {
+                const config = {
+                    dinjiaScale: 2,
+                    yinliuSKURate: 0.48,
+                    normalSKURate: 0.52,
+                    youhuiquanAmount: 3,
+                }
+                const state = Vue.reactive({
+                    inputPrice: 0
+                })
+                const priceYLDINGJIA = ((config) => {
+                    if (Number.isNaN(state.inputPrice)) {
+                        return
+                    }
+                    if (state.inputPrice <= 0) {
+                        return 0
+                    }
+                    return (math.add(
+                        math.bignumber(state.inputPrice),
+                        math.bignumber(
+                            math.divide(
+                                math.bignumber(config.youhuiquanAmount),
+                                math.bignumber(config.yinliuSKURate * 2)
+                            )
+                        )
+                    ) * 2).toFixed(2)
+                })
+                const priceNormalDINGJIA = ((config) => {
+                    if (Number.isNaN(state.inputPrice)) {
+                        return
+                    }
+                    if (state.inputPrice <= 0) {
+                        return 0
+                    }
+                    return (math.add(
+                        math.bignumber(state.inputPrice),
+                        math.bignumber(
+                            math.divide(
+                                math.bignumber(config.youhuiquanAmount),
+                                math.bignumber(config.normalSKURate * 2)
+                            )
+                        )
+                    ) * 2).toFixed(2)
+                })
+                const priceYLSKU = ((config) => {
+                    if (Number.isNaN(priceYLDINGJIA(config))) {
+                        return
+                    }
+                    if (state.inputPrice <= 0) {
+                        return 0
+                    }
+                    return math.multiply(
+                        math.bignumber(priceYLDINGJIA(config)),
+                        math.bignumber(config.yinliuSKURate)
+                    ).toFixed(2)
+                })
+                const priceNormalSKU = ((config) => {
+                    if (Number.isNaN(priceNormalDINGJIA(config))) {
+                        return
+                    }
+                    if (state.inputPrice <= 0) {
+                        return 0
+                    }
+                    return math.multiply(
+                        math.bignumber(priceNormalDINGJIA(config)),
+                        math.bignumber(config.normalSKURate)
+                    ).toFixed(2)
+                })
+                const expectProfitYLSKU = ((config) => {
+                    if (Number.isNaN(priceYLSKU(config))) {
+                        return
+                    }
+                    if (state.inputPrice <= 0) {
+                        return 0
+                    }
+                    return math.chain(math.bignumber(priceYLSKU(config)))
+                        .subtract(math.bignumber(config.youhuiquanAmount))
+                        .subtract(math.bignumber(state.inputPrice))
+                        .done()
+                        .toFixed(2)
+                })
+                const expectProfitNormalSKU = ((config) => {
+                    if (Number.isNaN(priceNormalSKU(config))) {
+                        return
+                    }
+                    if (state.inputPrice <= 0) {
+                        return 0
+                    }
+                    return math.chain(math.bignumber(priceNormalSKU(config)))
+                        .subtract(math.bignumber(config.youhuiquanAmount))
+                        .subtract(math.bignumber(state.inputPrice))
+                        .done()
+                        .toFixed(2)
+                })
+                const genTableRow = (config) => {
+                    return {
+                        title: config.normalSKURate,
+                        jinjia: state.inputPrice,
+                        priceYLSKU: `${priceYLSKU(config)}  / ${priceYLSKU(config) - config.youhuiquanAmount} / ${expectProfitYLSKU(config)}`,
+                        priceNormalSKU: `${priceNormalSKU(config)} / ${priceNormalSKU(config) - config.youhuiquanAmount} / ${expectProfitNormalSKU(config)}`,
+                        youhuiquanAmount: config.youhuiquanAmount,
+                    }
+                }
+                const tabDatas = Vue.computed(() => {
+                    if (Number.isNaN(state.inputPrice) || state.inputPrice <= 0) {
+                        return []
+                    }
+                    return [
+                        { ...config, title: "第0次" },
+                        { ...config, normalSKURate: config.normalSKURate + 0.02, title: "第1次" },
+                        { ...config, normalSKURate: config.normalSKURate + 0.04, title: "第2次" },
+                    ].map(i => genTableRow(i))
+                })
+                return {
+                    ...Vue.toRefs(state),
+                    priceYLSKU,
+                    priceYLDINGJIA,
+                    priceNormalSKU,
+                    config,
+                    priceNormalDINGJIA,
+                    expectProfitNormalSKU,
+                    expectProfitYLSKU,
+                    tabDatas
+                }
+            }
+        })
+        const App = {
+            setup(){
+                let index = 1;
+                const state = Vue.reactive({
+                    data:[index++]
+                })
+                const handleClose = (pos)=>{
+                    state.data.splice(state.data.findIndex(i=>i===pos),1)
+                }
+                const addProduct = ()=>{
+                    state.data.push(index++)
+                }
+                return {
+                    handleClose,
+                    addProduct,
+                    ...Vue.toRefs(state)
+                }
+            }
+        }
+        const app = Vue.createApp(App)
+        app.use(naive)
+        app.component('Product', Product)
+        app.mount('#app')
+    </script>
+</body>
+
+</html>

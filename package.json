@@ -1,0 +1,11 @@
+{
+  "name": "murphy-tong.github.io",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:Murphy-Tong/murphy-tong.github.io.git",
+  "author": "tongzhiyang <tongzhiyang@souche.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "prettier": "^3.2.5"
+  }
+}
