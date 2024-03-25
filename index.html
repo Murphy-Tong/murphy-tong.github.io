@@ -141,14 +141,14 @@
                         return 0
                     }
                     return (math.add(
-                        math.bignumber(state.inputPrice),
+                        math.bignumber(state.inputPrice * 2),
                         math.bignumber(
                             math.divide(
                                 math.bignumber(config.youhuiquanAmount),
-                                math.bignumber(config.yinliuSKURate * 2)
+                                math.bignumber(config.yinliuSKURate)
                             )
                         )
-                    ) * 2).toFixed(2)
+                    )).toFixed(2)
                 })
                 const priceNormalDINGJIA = ((config) => {
                     if (Number.isNaN(state.inputPrice)) {
@@ -162,7 +162,7 @@
                         math.bignumber(
                             math.divide(
                                 math.bignumber(config.youhuiquanAmount),
-                                math.bignumber(config.normalSKURate * 2)
+                                math.bignumber(config.normalSKURate)
                             )
                         )
                     ) * 2).toFixed(2)
