@@ -87,8 +87,8 @@
             <tr>
                 <th>正价调整</th>
                 <th>进价(元)</th>
-                <th>低价 sku 定价 / 到手价 / 利润 (元)</th>
-                <th>普通 sku 定价 / 到手价 / 利润 (元)</th>
+                <th>低价 sku 定价 / 折后价 / 到手价 / 利润 (元)</th>
+                <th>普通 sku 定价 / 折后价 / 到手价 / 利润 (元)</th>
                 <th>优惠券(元)</th>
             </tr>
             <template v-for="(item) in tabDatas" :key="item.title">
@@ -221,8 +221,8 @@
                     return {
                         title: config.normalSKURate,
                         jinjia: state.inputPrice,
-                        priceYLSKU: `${priceYLSKU(config)}  / ${priceYLSKU(config) - config.youhuiquanAmount} / ${expectProfitYLSKU(config)}`,
-                        priceNormalSKU: `${priceNormalSKU(config)} / ${priceNormalSKU(config) - config.youhuiquanAmount} / ${expectProfitNormalSKU(config)}`,
+                        priceYLSKU: `${priceYLDINGJIA(config)} / ${priceYLSKU(config)} / ${math.subtract(priceYLSKU(config) , math.bignumber(config.youhuiquanAmount)).toFixed(2)} / ${expectProfitYLSKU(config)}`,
+                        priceNormalSKU: `${priceNormalDINGJIA(config)}  / ${priceNormalSKU(config)} / ${math.subtract(priceNormalSKU(config) , math.bignumber(config.youhuiquanAmount)).toFixed(2)} / ${expectProfitNormalSKU(config)}`,
                         youhuiquanAmount: config.youhuiquanAmount,
                     }
                 }
