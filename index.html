@@ -16,9 +16,10 @@
 
 <body>
     <style>
-                #app{
+        #app {
             height: 100vh;
         }
+
         .content {
             display: flex;
             flex-direction: column;
@@ -29,96 +30,111 @@
             overflow: scroll;
         }
 
-        table,
-        th,
-        td {
-            border: 1px solid;
+        .n-table {
+            text-align: center;
         }
 
-        table {
-            margin: 0 auto;
-            display: block;
-            overflow-x: auto;
-            border-spacing: 0;
-        }
-
-        tbody {
-            white-space: nowrap;
-        }
-
-        th,
-        td {
-            padding: 5px 10px;
-            border-top-width: 0;
-            border-left-width: 0;
-        }
-
-        th {
-            position: sticky;
-            top: 0;
-            background: #fff;
-            vertical-align: bottom;
-        }
-
-        th:last-child,
-        td:last-child {
-            border-right-width: 0;
-        }
-
-        tr:last-child td {
-            border-bottom-width: 0;
-        }
-        .n-card__content{
+        .n-card__content {
             display: flex;
             flex-direction: column;
         }
-        .n-float-button .n-float-button__body{
+
+        .n-float-button .n-float-button__body {
             padding: 0;
+        }
+
+        .sku-normal {
+            color: #18a058 !important;
+        }
+
+        .yl-sku {
+            color: #C2095A !important;
+        }
+
+        .table-head {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            margin-bottom: 24px;
+            gap: 24px;
+        }
+
+        .table-head>* {
+            flex-shrink: 0;
         }
     </style>
     <template id="product">
-        <div style="display: flex;width: 100%;; align-items: center;margin-bottom: 24px;">
-            <label style="flex-shrink: 0;">商品名称：</label>
-            <n-input placeholder="商品名称" style="flex:5;margin-right: 60px;" ></n-input>
-            <label style="flex-shrink: 0;">发货价：</label>
-            <n-input-number v-model:value="inputPrice" clearable class="jinjia" style="flex:2" placeholder="输入拿货价"></n-input-number>
-        </div>
-        <table :bordered="true" :single-line="false">
-            <tr>
-                <th>正价调整</th>
-                <th>进价(元)</th>
-                <th>低价 sku 定价 / 折后价 / 到手价 / 利润 (元)</th>
-                <th>普通 sku 定价 / 折后价 / 到手价 / 利润 (元)</th>
-                <th>优惠券(元)</th>
-            </tr>
+        <n-form ref="formRef" inline :label-width="80" :model="formValue" :rules="rules" :size="size">
+
+            <n-form-item label="优惠券">
+                <n-input-number v-model:value="youhuiquanAmount" placeholder="优惠券面额"></n-input-number>
+            </n-form-item>
+            <n-form-item label="利润点">
+                <n-input-number v-model:value="profitPoint" placeholder="利润点"></n-input-number>
+            </n-form-item>
+            <n-form-item label="货损点">
+                <n-input-number v-model:value="deprofitPoint" placeholder="货损点"></n-input-number>
+            </n-form-item>
+            <n-form-item label="拿货价">
+                <n-input-number v-model:value="inputPrice" clearable class="jinjia"
+                    placeholder="输入拿货价"></n-input-number>
+            </n-form-item>
+        </n-form>
+        <n-table :bordered="true" :single-line="false">
+            <n-thead>
+                <n-tr>
+                    <n-th rowspan="2" style="vertical-align: middle;">正价调整</n-th>
+                    <n-th rowspan="2" style="vertical-align: middle;" class="input-price">进价</n-th>
+                    <n-th colspan="4" class="sku-normal">普通 sku</n-th>
+                    <n-th colspan="4" class="yl-sku">低价 sku</n-th>
+                    <n-th rowspan="2" class="youuhuiquan" style="vertical-align: middle;">优惠券</n-th>
+                </n-tr>
+                <n-tr>
+                    <n-th class="sku-normal">定价</n-th>
+                    <n-th class="sku-normal">折后价</n-th>
+                    <n-th class="sku-normal">到手价</n-th>
+                    <n-th class="sku-normal">利润</n-th>
+
+                    <n-th class="yl-sku">定价</n-th>
+                    <n-th class="yl-sku">折后价</n-th>
+                    <n-th class="yl-sku">到手价</n-th>
+                    <n-th class="yl-sku" style="border-right-width:unset">利润</n-th>
+                </n-tr>
+            </n-thead>
             <template v-for="(item) in tabDatas" :key="item.title">
-                <tr>
-                    <td>{{item.title}}</td>
-                    <td>{{item.jinjia}}</td>
-                    <td>{{item.priceYLSKU}}</td>
-                    <td>{{item.priceNormalSKU}}</td>
-                    <td>{{item.youhuiquanAmount}}</td>
-                </tr>
+                <n-tr>
+                    <n-td>{{item.title}}</n-td>
+                    <n-td class="input-price">{{item.jinjia}}</n-td>
+                    <n-td class="sku-normal" @click="onPriceClick(item)"
+                        v-for="item in item.priceNormalSKU.split('/')">{{item}}</n-td>
+                    <n-td class="yl-sku" @click="onPriceClick(item)"
+                        v-for="item in item.priceYLSKU.split('/')">{{item}}</n-td>
+                    <n-td class="youuhuiquan">{{item.youhuiquanAmount}}</n-td>
+                </n-tr>
             </template>
-        </table>
+        </n-table>
     </template>
     <div id="app">
         <div class="content">
-            <template v-for="item in data" :key="item">
-                <n-card closable @close="handleClose(data)" >
-                    <Product />
-                </n-card>
-            </template>
+            <n-message-provider>
+                <template v-for="item in data" :key="item">
+                    <n-card closable @close="handleClose(data)">
+                        <template #header>
+                            <n-input placeholder="商品名称" style="min-width: 120px;width:fit-content;;font-weight: 700;font-size: 32px;"></n-input>
+                        </template>
+                        <Product />
+                    </n-card>
+                </template>
+            </n-message-provider>
         </div>
         <n-float-button :right="64" :bottom="124" shape="square" @click="addProduct">
             <n-icon size="40">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                  <path
-                    d="M368.5 240H272v-96.5c0-8.8-7.2-16-16-16s-16 7.2-16 16V240h-96.5c-8.8 0-16 7.2-16 16 0 4.4 1.8 8.4 4.7 11.3 2.9 2.9 6.9 4.7 11.3 4.7H240v96.5c0 4.4 1.8 8.4 4.7 11.3 2.9 2.9 6.9 4.7 11.3 4.7 8.8 0 16-7.2 16-16V272h96.5c8.8 0 16-7.2 16-16s-7.2-16-16-16z"
-                  />
+                    <path
+                        d="M368.5 240H272v-96.5c0-8.8-7.2-16-16-16s-16 7.2-16 16V240h-96.5c-8.8 0-16 7.2-16 16 0 4.4 1.8 8.4 4.7 11.3 2.9 2.9 6.9 4.7 11.3 4.7H240v96.5c0 4.4 1.8 8.4 4.7 11.3 2.9 2.9 6.9 4.7 11.3 4.7 8.8 0 16-7.2 16-16V272h96.5c8.8 0 16-7.2 16-16s-7.2-16-16-16z" />
                 </svg>
-              </n-icon>
-          </n-float-button>
+            </n-icon>
+        </n-float-button>
     </div>
     <script>
         const Product = Vue.defineComponent({
@@ -126,12 +142,27 @@
             setup() {
                 const config = {
                     dinjiaScale: 2,
-                    yinliuSKURate: 0.48,
-                    normalSKURate: 0.52,
-                    youhuiquanAmount: 3,
                 }
                 const state = Vue.reactive({
-                    inputPrice: 0
+                    inputPrice: 0,
+                    youhuiquanAmount: 3,
+                    profitPoint: 0.02,
+                    deprofitPoint: 0.02,
+                })
+                const yinliuSKURate = Vue.computed(() => {
+                    return math.subtract(math.bignumber(math.divide(math.bignumber(1), math.bignumber(config.dinjiaScale))), math.bignumber(state.deprofitPoint)).toFixed(2)
+                })
+                const normalSKURate = Vue.computed(() => {
+                    return math.add(
+                        math.bignumber(
+                            math.divide(
+                                math.bignumber(1),
+                                math.bignumber(config.dinjiaScale)
+                            )
+                        ),
+                        math.bignumber(state.profitPoint)
+                    )
+                        .toFixed(2)
                 })
                 const priceYLDINGJIA = ((config) => {
                     if (Number.isNaN(state.inputPrice)) {
@@ -144,7 +175,7 @@
                         math.bignumber(state.inputPrice * 2),
                         math.bignumber(
                             math.divide(
-                                math.bignumber(config.youhuiquanAmount),
+                                math.bignumber(state.youhuiquanAmount),
                                 math.bignumber(config.yinliuSKURate)
                             )
                         )
@@ -158,14 +189,14 @@
                         return 0
                     }
                     return (math.add(
-                        math.bignumber(state.inputPrice),
+                        math.bignumber(state.inputPrice * 2),
                         math.bignumber(
                             math.divide(
-                                math.bignumber(config.youhuiquanAmount),
+                                math.bignumber(state.youhuiquanAmount),
                                 math.bignumber(config.normalSKURate)
                             )
                         )
-                    ) * 2).toFixed(2)
+                    )).toFixed(2)
                 })
                 const priceYLSKU = ((config) => {
                     if (Number.isNaN(priceYLDINGJIA(config))) {
@@ -199,7 +230,7 @@
                         return 0
                     }
                     return math.chain(math.bignumber(priceYLSKU(config)))
-                        .subtract(math.bignumber(config.youhuiquanAmount))
+                        .subtract(math.bignumber(state.youhuiquanAmount))
                         .subtract(math.bignumber(state.inputPrice))
                         .done()
                         .toFixed(2)
@@ -212,7 +243,7 @@
                         return 0
                     }
                     return math.chain(math.bignumber(priceNormalSKU(config)))
-                        .subtract(math.bignumber(config.youhuiquanAmount))
+                        .subtract(math.bignumber(state.youhuiquanAmount))
                         .subtract(math.bignumber(state.inputPrice))
                         .done()
                         .toFixed(2)
@@ -221,9 +252,9 @@
                     return {
                         title: config.normalSKURate,
                         jinjia: state.inputPrice,
-                        priceYLSKU: `${priceYLDINGJIA(config)} / ${priceYLSKU(config)} / ${math.subtract(priceYLSKU(config) , math.bignumber(config.youhuiquanAmount)).toFixed(2)} / ${expectProfitYLSKU(config)}`,
-                        priceNormalSKU: `${priceNormalDINGJIA(config)}  / ${priceNormalSKU(config)} / ${math.subtract(priceNormalSKU(config) , math.bignumber(config.youhuiquanAmount)).toFixed(2)} / ${expectProfitNormalSKU(config)}`,
-                        youhuiquanAmount: config.youhuiquanAmount,
+                        priceYLSKU: `${priceYLDINGJIA(config)} / ${priceYLSKU(config)} / ${math.subtract(priceYLSKU(config), math.bignumber(state.youhuiquanAmount)).toFixed(2)} / ${expectProfitYLSKU(config)}`,
+                        priceNormalSKU: `${priceNormalDINGJIA(config)}  / ${priceNormalSKU(config)} / ${math.subtract(priceNormalSKU(config), math.bignumber(state.youhuiquanAmount)).toFixed(2)} / ${expectProfitNormalSKU(config)}`,
+                        youhuiquanAmount: state.youhuiquanAmount,
                     }
                 }
                 const tabDatas = Vue.computed(() => {
@@ -231,11 +262,24 @@
                         return []
                     }
                     return [
-                        { ...config, title: "第0次" },
-                        { ...config, normalSKURate: config.normalSKURate + 0.02, title: "第1次" },
-                        { ...config, normalSKURate: config.normalSKURate + 0.04, title: "第2次" },
+                        { ...config, yinliuSKURate: yinliuSKURate.value, normalSKURate: (+normalSKURate.value).toFixed(2), title: "第0次" },
+                        { ...config, yinliuSKURate: yinliuSKURate.value, normalSKURate: (+normalSKURate.value + 0.02).toFixed(2), title: "第1次" },
+                        { ...config, yinliuSKURate: yinliuSKURate.value, normalSKURate: (+normalSKURate.value + 0.04).toFixed(2), title: "第2次" },
                     ].map(i => genTableRow(i))
                 })
+
+                const message = naive.useMessage()
+
+                const onPriceClick = (price) => {
+                    navigator.clipboard.writeText(price).then(() => {
+                        message.success(
+                            `已复制：${price}`
+                        )
+                    }).catch((e) => {
+                        message.error(e.message || "复制失败")
+                    })
+
+                }
                 return {
                     ...Vue.toRefs(state),
                     priceYLSKU,
@@ -245,20 +289,21 @@
                     priceNormalDINGJIA,
                     expectProfitNormalSKU,
                     expectProfitYLSKU,
+                    onPriceClick,
                     tabDatas
                 }
             }
         })
         const App = {
-            setup(){
+            setup() {
                 let index = 1;
                 const state = Vue.reactive({
-                    data:[index++]
+                    data: [index++]
                 })
-                const handleClose = (pos)=>{
-                    state.data.splice(state.data.findIndex(i=>i===pos),1)
+                const handleClose = (pos) => {
+                    state.data.splice(state.data.findIndex(i => i === pos), 1)
                 }
-                const addProduct = ()=>{
+                const addProduct = () => {
                     state.data.push(index++)
                 }
                 return {
