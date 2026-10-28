@@ -3,250 +3,479 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI 用量账单分析</title>
+<title>用量账单分析</title>
 <style>
 :root{
-  --bg:#0a0e13; --card:#121922; --card2:#171f29; --line:#222c38; --line2:#2d3a49;
-  --txt:#e6edf5; --txt2:#93a3b8; --txt3:#5f7186;
-  --accent:#4f8ff7; --green:#38d9a9; --amber:#f7b955; --red:#f2637a; --purple:#a78bfa;
+  --bg:#070a0e; --panel:#0f151d; --panel2:#141c26; --panel3:#1a2431;
+  --line:#1e2733; --line2:#2b3746;
+  --txt:#e8eef6; --txt2:#93a3b6; --txt3:#5f7183;
+  --blue:#5b9dff; --mint:#3ddbb0; --amber:#f5b850; --rose:#f2708d; --violet:#9d86f5; --cyan:#35d0e8;
+  --r:14px;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{
   background:
-    radial-gradient(900px 500px at 12% -10%, rgba(79,143,247,.10), transparent 60%),
-    radial-gradient(700px 400px at 92% 0%, rgba(56,217,169,.07), transparent 60%),
+    radial-gradient(900px 500px at 10% -8%, rgba(91,157,255,.10), transparent 62%),
+    radial-gradient(700px 420px at 92% -4%, rgba(61,219,176,.07), transparent 60%),
     var(--bg);
-  color:var(--txt);
-  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
-  font-size:14px; line-height:1.55; min-height:100vh;
-  -webkit-font-smoothing:antialiased;
+  color:var(--txt);font-family:var(--sans);font-size:14px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;min-height:100vh;
 }
-.app{max-width:1180px;margin:0 auto;padding:26px 22px 90px}
-.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.app{max-width:1280px;margin:0 auto;padding:22px 22px 70px}
+.num{font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0;padding:0}
+a{color:var(--blue)}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:#25303d;border-radius:5px}
+::-webkit-scrollbar-thumb:hover{background:#33404f}
+::-webkit-scrollbar-track{background:transparent}
+::selection{background:rgba(91,157,255,.3)}
 
-/* header */
-.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
-.brand{display:flex;align-items:center;gap:11px}
-.logo{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
-  background:linear-gradient(135deg,#4f8ff7,#38d9a9);color:#06202b;font-weight:800;font-size:15px}
-.brand h1{font-size:16px;margin:0;letter-spacing:.2px;font-weight:600}
-.brand .sub{font-size:11.5px;color:var(--txt3);margin-top:1px}
-.actions{display:flex;gap:8px}
-button{font:inherit;color:var(--txt);cursor:pointer;border-radius:9px;transition:.16s}
-.btn{border:1px solid var(--line2);background:var(--card2);padding:7px 13px;font-size:12.5px}
-.btn:hover{border-color:var(--accent);color:#cfe2ff}
-.btn-primary{background:linear-gradient(135deg,#3f7fe8,#2fb894);border:0;color:#fff;padding:9px 20px;font-size:13px;font-weight:600}
-.btn-primary:hover{filter:brightness(1.08)}
+/* ---------- topbar ---------- */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.logo{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;flex:0 0 auto;
+  background:linear-gradient(135deg,#5b9dff,#3ddbb0);color:#06131c}
+.brand h1{font-size:15px;font-weight:600;margin:0;letter-spacing:.1px;white-space:nowrap}
+.brand p{font-size:11.5px;color:var(--txt3);margin:1px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toolbar{display:flex;align-items:center;gap:8px;flex:0 0 auto}
 
-/* dropzone */
-.dropzone{border:1.5px dashed var(--line2);border-radius:16px;background:rgba(19,26,34,.55);
-  padding:52px 24px;text-align:center;transition:.18s;margin-bottom:8px}
-.dropzone.drag{border-color:var(--accent);background:rgba(79,143,247,.08);transform:scale(1.003)}
-.dropzone.compact{padding:13px 18px;display:flex;align-items:center;gap:14px;text-align:left;border-style:solid;background:var(--card)}
-.dz-icon{font-size:26px;color:var(--accent);margin-bottom:6px}
-.dropzone.compact .dz-icon{font-size:18px;margin:0}
-.dropzone h2{font-size:15px;margin:0 0 6px;font-weight:600}
-.dropzone p{margin:0;color:var(--txt2);font-size:12.5px}
-.dropzone code{background:#1b2531;padding:2px 6px;border-radius:5px;font-size:11.5px;color:#9dc0f0}
-.dropzone .hint{color:var(--txt3);font-size:11.5px;margin-top:12px}
-.dropzone.compact .hint,.dropzone.compact h2,.dropzone.compact .btn-primary{display:none}
-.dropzone.compact .fname{font-size:12.5px;color:var(--txt2)}
-.dropzone .btn-primary{margin-top:16px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--panel2);
+  border-radius:9px;padding:7px 13px;font-size:12.5px;color:#c8d6e6;transition:.16s;white-space:nowrap}
+.btn:hover{border-color:#3c4c5f;background:var(--panel3);color:#fff}
+.btn.primary{background:linear-gradient(135deg,#3f7fe8,#2fb894);border:0;color:#fff;font-weight:600}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn svg{opacity:.75}
 
-/* cards */
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:11px;margin:14px 0}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;position:relative;overflow:hidden}
-.card::after{content:'';position:absolute;inset:0 0 auto 0;height:2px;background:var(--accent);opacity:.55}
-.card.g::after{background:var(--green)}.card.a::after{background:var(--amber)}.card.p::after{background:var(--purple)}
-.card .k{font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--txt3);font-weight:600}
-.card .v{font-size:23px;font-weight:650;margin-top:4px;letter-spacing:-.4px;font-variant-numeric:tabular-nums}
-.card .v small{font-size:12px;font-weight:500;color:var(--txt2);margin-left:3px;letter-spacing:0}
-.card .s{font-size:11.5px;color:var(--txt2);margin-top:2px}
+.menu-wrap{position:relative}
+.menu{position:absolute;right:0;top:calc(100% + 6px);min-width:168px;background:#131b25;
+  border:1px solid var(--line2);border-radius:10px;padding:5px;z-index:40;
+  box-shadow:0 18px 40px -12px rgba(0,0,0,.75);display:none}
+.menu.on{display:block}
+.menu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:8px 10px;
+  border-radius:7px;font-size:12.5px;color:#c3d1e1}
+.menu button:hover{background:#1d2836;color:#fff}
+.menu small{margin-left:auto;color:var(--txt3);font-size:10.5px}
 
-/* panels */
-.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:17px 19px;margin-top:15px}
-.panel h2{font-size:13.5px;margin:0 0 14px;font-weight:600;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.panel h2 small{font-size:11.5px;color:var(--txt3);font-weight:400}
-.cols{display:grid;grid-template-columns:1.35fr 1fr;gap:15px}
-.cols .panel{margin-top:15px}
+/* ---------- drop ---------- */
+.drop{border:1.5px dashed var(--line2);border-radius:18px;background:rgba(15,21,29,.6);
+  padding:64px 24px;text-align:center;transition:.2s;cursor:pointer}
+.drop.drag{border-color:var(--blue);background:rgba(91,157,255,.08)}
+.drop .ico{font-size:26px;color:var(--blue);margin-bottom:10px}
+.drop h2{font-size:15px;font-weight:600;margin:0 0 6px}
+.drop p{margin:0;color:var(--txt2);font-size:12.5px}
+.drop code{background:#18222d;padding:2px 6px;border-radius:5px;font-size:11.5px;color:#8fb6ea}
+.drop .hint{margin-top:14px;color:var(--txt3);font-size:11.5px}
 
-/* table */
-.tbl-wrap{overflow-x:auto;margin-top:14px;-webkit-overflow-scrolling:touch}
-table{width:100%;border-collapse:collapse;font-size:12.5px;white-space:nowrap}
-th{font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);
-  font-weight:600;text-align:right;padding:0 10px 8px;border-bottom:1px solid var(--line2)}
-th:first-child,td:first-child{text-align:left;padding-left:2px}
-td{padding:8px 10px;text-align:right;border-bottom:1px solid rgba(34,44,56,.6);font-variant-numeric:tabular-nums}
-tbody tr:hover td{background:rgba(79,143,247,.045)}
+/* ---------- filter bar ---------- */
+.filterbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:14px}
+.fgroup{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);
+  border-radius:10px;padding:5px 6px 5px 11px;min-height:36px}
+.fgroup .lab{font-size:11px;color:var(--txt3);letter-spacing:.4px;white-space:nowrap}
+.fgroup .val{font-size:12.5px;color:var(--txt)}
+.seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:2px;gap:1px}
+.seg button{padding:4px 9px;border-radius:6px;font-size:11.5px;color:var(--txt2);transition:.15s;white-space:nowrap}
+.seg button:hover{color:var(--txt)}
+.seg button.on{background:var(--panel3);color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.35)}
+.drange{display:flex;align-items:center;gap:6px;flex:1 1 220px;min-width:0}
+.drange input{flex:1 1 0;min-width:0}
+.drange .lab{flex:0 0 auto}
+.multi{position:relative}
+.multi>button{display:flex;align-items:center;gap:6px;font-size:12px;color:#c3d1e1;padding:4px 6px;border-radius:7px}
+.multi>button:hover{background:var(--panel3)}
+.multi .cnt{background:#233040;color:#9fb6cc;border-radius:20px;padding:0 6px;font-size:10.5px;line-height:16px}
+.multi .pop{position:absolute;left:0;top:calc(100% + 6px);min-width:200px;max-height:280px;overflow:auto;
+  background:#131b25;border:1px solid var(--line2);border-radius:10px;padding:6px;z-index:40;
+  box-shadow:0 18px 40px -12px rgba(0,0,0,.75);display:none}
+.multi .pop.on{display:block}
+.multi label{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;font-size:12.5px;
+  color:#c3d1e1;cursor:pointer;white-space:nowrap}
+.multi label:hover{background:#1d2836}
+.multi input{accent-color:var(--blue);width:13px;height:13px;margin:0}
+.multi .pop .empty{padding:10px;color:var(--txt3);font-size:12px}
+.linkbtn{font-size:12px;color:var(--txt2);padding:6px 9px;border-radius:7px}
+.linkbtn:hover{color:#fff;background:var(--panel3)}
+.linkbtn.on{background:rgba(91,157,255,.13);color:#8fbcf7}
+.ins-more{width:100%;margin-top:2px;padding:8px;border-radius:9px;border:1px dashed var(--line2);
+  color:var(--txt2);font-size:12px;transition:.16s}
+.ins-more:hover{border-color:#3c4c5f;color:#fff;background:var(--panel2)}
+
+/* ---------- kpi ---------- */
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:14px}
+.kcard{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 15px;
+  position:relative;overflow:hidden;transition:.2s}
+.kcard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--blue);opacity:.7}
+.kcard.g::before{background:var(--mint)}.kcard.a::before{background:var(--amber)}
+.kcard.v::before{background:var(--violet)}
+.kcard .k{font-size:10.5px;letter-spacing:.55px;text-transform:uppercase;color:var(--txt3);font-weight:600}
+.kcard .v{font-size:22px;font-weight:650;letter-spacing:-.4px;margin-top:3px;font-variant-numeric:tabular-nums}
+.kcard .v small{font-size:11.5px;font-weight:500;color:var(--txt2);margin-left:3px;letter-spacing:0}
+.kcard .s{font-size:11.5px;color:var(--txt2);margin-top:2px}
+.kcard .s b{color:#dbe6f2;font-weight:600}
+.kcard[data-metric]{cursor:pointer}
+.kcard[data-metric]:hover{border-color:#3b4b5e;background:#121a24}
+.kcard[data-metric].act{border-color:rgba(91,157,255,.5);box-shadow:0 0 0 1px rgba(91,157,255,.18)}
+
+/* ---------- panel ---------- */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-top:14px}
+.panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px;flex-wrap:wrap}
+.panel-head h2{font-size:13.5px;font-weight:600;margin:0;display:flex;align-items:center;gap:8px}
+.panel-head h2 .dotm{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 3px rgba(91,157,255,.15)}
+.panel-head .sub{font-size:11.5px;color:var(--txt3);margin:3px 0 0}
+.head-right{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.grid-2{display:grid;grid-template-columns:1.25fr 1fr;gap:14px;align-items:stretch}
+.grid-2 .panel{margin-top:14px}
+#structPanel{display:flex;flex-direction:column}
+#struct{flex:1;display:flex;align-items:flex-start;padding-top:6px}
+
+/* ---------- chart ---------- */
+.chart{position:relative;min-height:240px}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart .hit{fill:transparent}
+.chart .bar{transition:opacity .15s;cursor:pointer}
+.chart .bar:hover,.chart.hovering .bar{opacity:.55}
+.chart .bar.sel{opacity:1!important;filter:drop-shadow(0 0 6px rgba(91,157,255,.6))}
+.axis{fill:#5f7183;font-size:10.5px;font-family:inherit}
+.axis.s{fill:#7f92a6;font-size:11px}
+.gline{stroke:#1b242f;stroke-width:1}
+.cursor{stroke:#3c4c5f;stroke-width:1;stroke-dasharray:3 3}
+.empty-chart{display:grid;place-items:center;min-height:260px;color:var(--txt3);font-size:12.5px}
+
+/* ---------- tooltip ---------- */
+.tip{position:fixed;z-index:70;pointer-events:none;background:rgba(14,20,28,.97);
+  border:1px solid var(--line2);border-radius:10px;padding:9px 12px;font-size:12px;line-height:1.7;
+  box-shadow:0 14px 34px -10px rgba(0,0,0,.8);backdrop-filter:blur(8px);
+  opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s;min-width:130px}
+.tip.on{opacity:1;transform:none}
+.tip .t{font-weight:600;margin-bottom:4px;display:flex;gap:8px;align-items:baseline}
+.tip .t span{font-size:11px;color:var(--txt3);font-weight:400}
+.tip .r{display:flex;justify-content:space-between;gap:18px;color:var(--txt2)}
+.tip .r b{color:#e8eef6;font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ---------- structure ---------- */
+.donut-wrap{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.donut{position:relative;flex:0 0 auto}
+.donut .mid{position:absolute;inset:0;display:grid;place-items:center;text-align:center;pointer-events:none}
+.donut .mid .m1{font-size:18px;font-weight:650;letter-spacing:-.3px}
+.donut .mid .m2{font-size:10.5px;color:var(--txt3);letter-spacing:.4px;text-transform:uppercase}
+.legend{flex:1;min-width:210px;display:grid;gap:2px}
+.lg{display:grid;grid-template-columns:9px 1fr auto;gap:9px;align-items:center;padding:6px 8px;
+  border-radius:7px;font-size:12.5px;cursor:pointer;transition:.14s}
+.lg:hover{background:var(--panel2)}
+.lg.off{opacity:.35}
+.lg .d{width:9px;height:9px;border-radius:3px}
+.lg .n{color:#c9d6e4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lg .n em{font-style:normal;color:var(--txt3);font-size:11px;margin-left:5px}
+.lg .p{color:#e8eef6;font-variant-numeric:tabular-nums;font-weight:600}
+
+/* ---------- insights ---------- */
+.ins-list{display:grid;gap:8px}
+.ins{background:var(--panel2);border-left:2px solid var(--txt3);border-radius:9px;padding:10px 13px;
+  font-size:12.5px;color:#bdcbdb;line-height:1.65}
+.ins.good{border-left-color:var(--mint)}
+.ins.warn{border-left-color:var(--amber)}
+.ins.info{border-left-color:var(--blue)}
+.ins.bad{border-left-color:var(--rose)}
+.ins b{color:#fff;font-weight:600}
+.ins .tag{display:inline-block;font-size:10px;letter-spacing:.5px;text-transform:uppercase;
+  padding:1px 6px;border-radius:4px;margin-right:7px;vertical-align:1px}
+.ins.good .tag{background:rgba(61,219,176,.14);color:#6fe6c2}
+.ins.warn .tag{background:rgba(245,184,80,.14);color:#f6ca83}
+.ins.info .tag{background:rgba(91,157,255,.14);color:#8fbcf7}
+.ins.bad .tag{background:rgba(242,112,141,.14);color:#f79bb2}
+
+/* ---------- table ---------- */
+.search{border:1px solid var(--line2);background:var(--panel2);border-radius:8px;padding:6px 10px;
+  font-size:12.5px;color:var(--txt);width:170px;outline:none;transition:.16s}
+.search:focus{border-color:var(--blue);background:#16202b}
+.search::placeholder{color:var(--txt3)}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{position:sticky;top:0;background:var(--panel);z-index:2;font-size:10.5px;letter-spacing:.45px;
+  text-transform:uppercase;color:var(--txt3);font-weight:600;text-align:right;padding:0 11px 9px;
+  border-bottom:1px solid var(--line2);white-space:nowrap;cursor:pointer;user-select:none;transition:color .15s}
+th:hover{color:#9fb2c6}
+th.on{color:var(--blue)}
+th .ar{display:inline-block;width:0;height:0;margin-left:4px;vertical-align:2px;
+  border-left:3px solid transparent;border-right:3px solid transparent}
+th.on .ar{border-top:4px solid currentColor}
+th.on.asc .ar{border-top:0;border-bottom:4px solid currentColor}
+th:first-child,td:first-child{text-align:left;padding-left:4px}
+th.no-sort{cursor:default}
+th.no-sort:hover{color:var(--txt3)}
+td{padding:8px 11px;text-align:right;border-bottom:1px solid #161e28;font-variant-numeric:tabular-nums;
+  color:#cdd9e6;white-space:nowrap}
+tbody tr{cursor:pointer;transition:background .12s}
+tbody tr:hover td{background:#141d27}
 tbody tr:last-child td{border-bottom:0}
-tr.total td{font-weight:650;border-top:1px solid var(--line2);border-bottom:0;padding-top:10px}
+tbody tr.sel td{background:rgba(91,157,255,.1)}
+tfoot td{font-weight:650;border-top:1px solid var(--line2);color:#fff;padding-top:10px}
+.mini-bar{height:4px;border-radius:2px;background:#1e2833;overflow:hidden;min-width:44px}
+.mini-bar i{display:block;height:100%;border-radius:2px}
+.pill{display:inline-block;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:600}
+.pill.ok{background:rgba(61,219,176,.13);color:#5fe4bd}
+.pill.mid{background:rgba(245,184,80,.13);color:#f6c97e}
+.pill.bad{background:rgba(242,112,141,.13);color:#f78fa8}
 .dim{color:var(--txt3)}
-.pill{display:inline-block;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
-.pill.ok{background:rgba(56,217,169,.14);color:#5ee8c0}
-.pill.mid{background:rgba(247,185,85,.14);color:#f7c877}
-.pill.bad{background:rgba(242,99,122,.14);color:#f78d9d}
+.pos{color:var(--rose)}.neg{color:var(--mint)}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:11px;
+  font-size:12px;color:var(--txt2);flex-wrap:wrap}
+.pager .pgs{display:flex;gap:4px;align-items:center}
+.pager button{min-width:28px;height:28px;border-radius:7px;border:1px solid transparent;
+  font-size:12px;color:var(--txt2);padding:0 8px}
+.pager button:hover:not(:disabled){background:var(--panel2);color:#fff}
+.pager button.on{background:var(--panel3);border-color:var(--line2);color:#fff}
+.pager button:disabled{opacity:.3;cursor:not-allowed}
 
-/* bars */
-.hbar{margin-top:4px}
-.hbar-row{display:grid;grid-template-columns:132px 1fr 100px;gap:12px;align-items:center;padding:6px 0}
-.hbar-label{font-size:12.5px;color:var(--txt2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hbar-track{height:9px;background:#1b2531;border-radius:5px;overflow:hidden}
-.hbar-fill{height:100%;border-radius:5px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
-.hbar-val{font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums;color:var(--txt)}
-.hbar-val small{color:var(--txt3);font-size:11px;margin-left:5px}
+/* ---------- drawer ---------- */
+.scrim{position:fixed;inset:0;background:rgba(4,7,10,.55);backdrop-filter:blur(2px);z-index:80;
+  opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:#0c121a;
+  border-left:1px solid var(--line2);z-index:81;transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1);
+  display:flex;flex-direction:column;box-shadow:-30px 0 60px -30px rgba(0,0,0,.9)}
+.drawer.on{transform:none}
+.dr-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:18px 20px;
+  border-bottom:1px solid var(--line)}
+.dr-head h3{font-size:14.5px;font-weight:600;margin:0}
+.dr-head p{font-size:11.5px;color:var(--txt3);margin:2px 0 0}
+.dr-close{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;color:var(--txt2);flex:0 0 auto}
+.dr-close:hover{background:var(--panel2);color:#fff}
+.dr-body{padding:18px 20px 30px;overflow:auto;flex:1}
+.dr-kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:18px}
+.dr-kpis > div{background:var(--panel2);border-radius:10px;padding:11px 13px}
+.dr-kpis .k{font-size:10.5px;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px}
+.dr-kpis .v{font-size:17px;font-weight:650;margin-top:2px;font-variant-numeric:tabular-nums}
+.dr-sec{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);font-weight:600;margin:16px 0 9px}
 
-/* stacked */
-.stack{display:flex;height:26px;border-radius:7px;overflow:hidden;gap:2px;margin:2px 0 14px}
-.stack div{transition:.3s}
-.stack-legend{display:grid;gap:1px}
-.lg-row{display:grid;grid-template-columns:10px 1fr repeat(3,88px);gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(34,44,56,.55);font-size:12.5px}
-.lg-row:last-child{border-bottom:0}
-.lg-dot{width:9px;height:9px;border-radius:3px}
-.lg-row span:not(.lg-name){text-align:right;font-variant-numeric:tabular-nums}
-.lg-head{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--txt3);font-weight:600}
+/* ---------- misc ---------- */
+.notice{background:rgba(245,184,80,.08);border:1px solid rgba(245,184,80,.28);color:#f0cd97;
+  border-radius:10px;padding:10px 14px;font-size:12.5px;margin-top:12px}
+.notice.err{background:rgba(242,112,141,.08);border-color:rgba(242,112,141,.32);color:#f8b0c0}
+.toast{position:fixed;left:50%;bottom:32px;transform:translate(-50%,16px);background:#1a2431;
+  border:1px solid var(--line2);color:#e8eef6;border-radius:10px;padding:9px 18px;font-size:12.5px;
+  z-index:90;opacity:0;pointer-events:none;transition:.22s;box-shadow:0 16px 40px -14px rgba(0,0,0,.8)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.foot{text-align:center;color:var(--txt3);font-size:11.5px;margin-top:26px}
+.skel{color:var(--txt3);font-size:12.5px;padding:14px 0;text-align:center}
+[hidden]{display:none!important}
 
-/* insights */
-.insights{list-style:none;margin:0;padding:0;display:grid;gap:9px}
-.insights li{background:var(--card2);border-left:3px solid var(--txt3);border-radius:8px;
-  padding:10px 13px;font-size:12.8px;color:#c9d5e2;line-height:1.6}
-.insights li.good{border-left-color:var(--green)}
-.insights li.warn{border-left-color:var(--amber)}
-.insights li.info{border-left-color:var(--accent)}
-.insights li b{color:#fff;font-weight:600}
-
-.notice{background:rgba(247,185,85,.09);border:1px solid rgba(247,185,85,.3);color:#f2cf9a;
-  border-radius:10px;padding:11px 14px;font-size:12.5px;margin-top:12px}
-.notice.err{background:rgba(242,99,122,.09);border-color:rgba(242,99,122,.35);color:#f8b3bd}
-
-.meta{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:2px}
-.tag{font-size:11.5px;color:var(--txt2);background:var(--card2);border:1px solid var(--line);
-  border-radius:20px;padding:3px 10px}
-.tag b{color:var(--txt);font-weight:600}
-
-/* chart */
-.chart svg{display:block;width:100%;height:auto}
-.chart .bar:hover{opacity:.82}
-.grid-line{stroke:#1e2731;stroke-width:1}
-.axis-txt{fill:#5f7186;font-size:10.5px;font-family:inherit}
-
-.foot{color:var(--txt3);font-size:11.5px;text-align:center;margin-top:24px}
-
-@media (max-width:820px){
-  .cols{grid-template-columns:1fr}
-  .hbar-row{grid-template-columns:92px 1fr 84px}
-  .lg-row{grid-template-columns:10px 1fr 74px;font-size:12px}
-  .lg-row span:nth-child(4){display:none}
+@media (max-width:980px){
+  .grid-2{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .app{padding:16px 12px 60px}
+  .brand p{display:none}
+  .drop{padding:44px 18px}
+  .kpi{grid-template-columns:repeat(2,1fr)}
+  .kcard{padding:11px 12px}
+  .kcard .v{font-size:19px}
+  .kcard .s{font-size:10.5px}
+  .search{width:120px}
+  .pager{justify-content:center}
+  .filterbar{gap:6px}
+  .fgroup{flex-wrap:wrap;flex:1 1 44%;min-width:0;width:auto;padding:6px 8px}
+  .fgroup:first-of-type{flex:1 1 100%}
+  .drange{flex:1 1 100%;order:3}
+  .fgroup .search{flex:1 1 40%;width:auto!important;min-width:0}
+  .fgroup > .lab{flex:0 0 auto}
+  .multi .pop{max-width:calc(100vw - 52px)}
+  .panel{padding:13px 12px}
+  .panel-head{gap:10px}
+  .head-right{width:100%}
+  .seg{overflow-x:auto;max-width:100%}
+  .donut-wrap{gap:14px}
+  .legend{min-width:150px}
+  .dr-kpis{grid-template-columns:repeat(2,1fr)}
+  th.opt,td.opt{display:none}
+  th,td{padding:8px 7px}
+  th:first-child,td:first-child{padding-left:2px}
+  .wd{display:none}
+  .foot{font-size:10.5px}
+}
+@media print{
+  body{background:#fff;color:#111}
+  .topbar,.filterbar,.drop,.seg,.search,.pager,.scrim,.drawer,.tip,.toast,th.ar{display:none!important}
+  .app{max-width:none;padding:0}
+  .panel,.kcard{background:#fff;border-color:#d5d5d5;break-inside:avoid;box-shadow:none}
+  .panel-head h2,.kcard .v,td,tfoot td{color:#111}
+  .kcard .k,.kcard .s,th,.dim{color:#555}
+  tbody tr:hover td{background:none}
 }
 </style>
 </head>
 <body>
 <div class="app">
-  <header class="top">
+  <header class="topbar">
     <div class="brand">
-      <div class="logo">▦</div>
+      <div class="logo">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M2 12V4l6 5 6-5v8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
       <div>
-        <h1>AI 用量账单分析</h1>
-        <div class="sub">本地解析 · 数据不上传</div>
+        <h1>用量账单分析</h1>
+        <p id="subtitle">本地解析 · 数据不上传</p>
       </div>
     </div>
-    <div class="actions">
-      <button class="btn" id="btnMd" hidden>复制 Markdown 报告</button>
-      <button class="btn" id="btnNew" hidden>重新导入</button>
+    <div class="toolbar" id="toolbar" hidden>
+      <button class="btn" data-act="import">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2v8m0 0L5 7m3 3 3-3M3 12v1.5h10V12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        重新导入
+      </button>
+      <div class="menu-wrap">
+        <button class="btn" data-act="export">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 11V3m0 0L5 6m3-3 3 3M3 12v1.5h10V12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          导出
+        </button>
+        <div class="menu" id="exportMenu">
+          <button data-act="csv">明细 CSV</button>
+          <button data-act="md">Markdown 报告</button>
+          <button data-act="print">打印 / 存 PDF</button>
+        </div>
+      </div>
     </div>
   </header>
 
-  <section class="dropzone" id="dropzone">
+  <section class="drop" id="drop">
     <input type="file" id="fileInput" multiple accept=".zip,.csv" hidden>
-    <div class="dz-icon" id="dzIcon">⤓</div>
-    <h2 id="dzTitle">把导出的 zip / csv 拖到这里</h2>
-    <p id="dzDesc">支持 <code>usage_data_*.zip</code>，也可以同时拖入 <code>cost-*.csv</code> 和 <code>amount-*.csv</code></p>
-    <div class="fname" id="dzFile" hidden></div>
-    <button class="btn-primary" id="btnPick">选择文件</button>
-    <p class="hint">所有计算在浏览器内完成 · 不会上传任何数据</p>
+    <div class="ico">&#8595;</div>
+    <h2>把导出的 zip / csv 拖到这里</h2>
+    <p>支持 <code>usage_data_*.zip</code>，也可以同时拖入 <code>cost-*.csv</code> 和 <code>amount-*.csv</code></p>
+    <p class="hint">全部在浏览器本地计算 · 文件不会离开这台设备</p>
   </section>
 
-  <main id="report" hidden>
-    <div class="meta" id="meta"></div>
-    <div id="notice"></div>
-    <div class="cards" id="cards"></div>
+  <div id="notice"></div>
+  <div class="filterbar" id="filterbar" hidden></div>
+  <div class="kpi" id="kpi" hidden></div>
 
-    <section class="panel">
-      <h2>每日趋势 <small>费用（柱）· 请求数（线）</small></h2>
-      <div class="chart" id="chartDaily"></div>
-      <div class="tbl-wrap" id="tblDaily"></div>
-    </section>
+  <section class="panel" id="trendPanel" hidden>
+    <div class="panel-head">
+      <div>
+        <h2><span class="dotm"></span>趋势</h2>
+        <p class="sub">点击任意一天可下钻查看当天明细</p>
+      </div>
+      <div class="seg" id="metricSeg">
+        <button data-metric="cost" class="on">费用</button>
+        <button data-metric="req">请求</button>
+        <button data-metric="tokens">Token</button>
+        <button data-metric="rate">命中率</button>
+      </div>
+    </div>
+    <div class="chart" id="chart"></div>
+  </section>
 
-    <section class="panel">
-      <h2>成本结构 <small>token 占比 vs 费用占比</small></h2>
+  <div class="grid-2">
+    <section class="panel" id="structPanel" hidden>
+      <div class="panel-head"><div><h2>成本结构</h2><p class="sub">点击图例可过滤该计费项</p></div></div>
       <div id="struct"></div>
     </section>
+    <section class="panel" id="insightPanel" hidden>
+      <div class="panel-head"><div><h2>关键发现</h2><p class="sub">基于当前筛选条件</p></div></div>
+      <div class="ins-list" id="insights"></div>
+    </section>
+  </div>
 
-    <div class="cols">
-      <section class="panel"><h2>API Key</h2><div id="keyBox"></div></section>
-      <section class="panel"><h2>模型</h2><div id="modelBox"></div></section>
+  <section class="panel" id="tablePanel" hidden>
+    <div class="panel-head">
+      <div><h2>明细</h2><p class="sub" id="tableSub"></p></div>
+      <div class="head-right">
+        <div class="seg" id="dimSeg">
+          <button data-dim="date" class="on">按日期</button>
+          <button data-dim="key">按 Key</button>
+          <button data-dim="model">按模型</button>
+          <button data-dim="type">按计费项</button>
+        </div>
+        <input class="search" id="search" placeholder="搜索…">
+      </div>
     </div>
+    <div class="tbl-wrap" id="tableWrap"></div>
+    <div class="pager" id="pager"></div>
+  </section>
 
-    <section class="panel">
-      <h2>计费档位 <small>同一计费项出现多个单价</small></h2>
-      <div id="priceBox"></div>
-    </section>
+  <section class="panel" id="pricePanel" hidden>
+    <div class="panel-head">
+      <div><h2>计费档位</h2><p class="sub">同一模型同一计费项出现多个单价时，通常是峰谷折扣或不同计费批次</p></div>
+    </div>
+    <div id="priceBox"></div>
+  </section>
 
-    <section class="panel">
-      <h2>关键发现</h2>
-      <ul class="insights" id="insights"></ul>
-    </section>
-    <div class="foot" id="foot"></div>
-  </main>
+  <div class="foot" id="foot"></div>
 </div>
 
+<aside class="drawer" id="drawer"></aside>
+<div class="scrim" id="scrim"></div>
+<div class="tip" id="tip"></div>
+<div class="toast" id="toast"></div>
+
 <script>
-/* ============================ 基础工具 ============================ */
+/* ============================================================
+   基础工具
+   ============================================================ */
 const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const N = v => { const n = Number(String(v ?? '').replace(/[, ]/g, '')); return isFinite(n) ? n : 0; };
 const int = n => Math.round(n).toLocaleString('en-US');
 const tk = n => n >= 1e9 ? (n / 1e9).toFixed(2) + 'B'
   : n >= 1e6 ? (n / 1e6).toFixed(2) + 'M'
   : n >= 1e3 ? (n / 1e3).toFixed(1) + 'K' : String(Math.round(n));
-const cny = v => v >= 1000 ? v.toLocaleString('en-US', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
-  : v >= 100 ? v.toFixed(2) : v >= 1 ? v.toFixed(3) : v.toFixed(4);
-const pct = v => (v * 100).toFixed(1) + '%';
+const cny = v => Math.abs(v) >= 1000 ? v.toLocaleString('en-US', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+  : Math.abs(v) >= 100 ? v.toFixed(2) : Math.abs(v) >= 1 ? v.toFixed(3) : v.toFixed(4);
+const pct = (v, d = 1) => (v * 100).toFixed(d) + '%';
 const perM = p => (p * 1e6).toLocaleString('en-US', { maximumFractionDigits: 4 });
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const stripTags = s => String(s ?? '').replace(/<br\s*\/?>/g, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ');
 const WD = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 const p2 = n => String(n).padStart(2, '0');
 const DAY = s => String(s || '').slice(0, 10);
-function weekday(ds) {
+const weekday = ds => {
   const [y, m, d] = ds.split('-').map(Number);
-  if (!y || !m || !d) return '';
-  return WD[new Date(y, m - 1, d).getDay()];
-}
-function fmtLocal(d) { return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); }
-function dateRange(a, b) {
+  return (y && m && d) ? WD[new Date(y, m - 1, d).getDay()] : '';
+};
+const fmtLocal = d => d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate());
+const dateRange = (a, b) => {
   const out = [];
   const [y1, m1, d1] = a.split('-').map(Number), [y2, m2, d2] = b.split('-').map(Number);
   const cur = new Date(y1, m1 - 1, d1), end = new Date(y2, m2 - 1, d2);
-  let guard = 0;
-  while (cur <= end && guard++ < 400) { out.push(fmtLocal(cur)); cur.setDate(cur.getDate() + 1); }
+  let g = 0;
+  while (cur <= end && g++ < 800) { out.push(fmtLocal(cur)); cur.setDate(cur.getDate() + 1); }
   return out;
-}
+};
+const shiftDay = (ds, n) => { const [y, m, d] = ds.split('-').map(Number); return fmtLocal(new Date(y, m - 1, d + n)); };
+const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000) + 1;
+
 const TYPE_LABEL = {
   input_cache_hit_tokens: '缓存命中输入',
   input_cache_miss_tokens: '缓存未命中输入',
   output_tokens: '输出',
-  request_count: '请求数'
+  request_count: '请求数',
+  image_tokens: '图像',
+  audio_tokens: '音频'
 };
 const TYPE_COLOR = {
-  input_cache_hit_tokens: '#38d9a9',
-  input_cache_miss_tokens: '#f7b955',
-  output_tokens: '#4f8ff7',
-  request_count: '#5f7186'
+  input_cache_hit_tokens: '#3ddbb0',
+  input_cache_miss_tokens: '#f5b850',
+  output_tokens: '#5b9dff',
+  request_count: '#5f7183'
 };
-const PALETTE = ['#38d9a9', '#f7b955', '#4f8ff7', '#a78bfa', '#f2637a', '#22d3ee', '#facc15'];
+const PALETTE = ['#3ddbb0', '#f5b850', '#5b9dff', '#9d86f5', '#f2708d', '#35d0e8', '#facc15'];
 const typeLabel = t => TYPE_LABEL[t] || t;
 const typeColor = (t, i) => TYPE_COLOR[t] || PALETTE[(i || 0) % PALETTE.length];
 
-/* ============================ CSV 解析 ============================ */
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('on'), 1800);
+}
+
+/* ============================================================
+   CSV / ZIP 解析
+   ============================================================ */
 function parseCSV(text) {
   text = String(text).replace(/^\uFEFF/, '');
   const rows = [];
@@ -268,18 +497,13 @@ function parseCSV(text) {
     .map(r => { const o = {}; head.forEach((h, i) => { o[h] = (r[i] ?? '').trim(); }); return o; });
 }
 
-/* ============================ ZIP 解析（零依赖） ============================ */
 function decodeBytes(u8) {
   let s = new TextDecoder('utf-8').decode(u8);
-  if (s.includes('\uFFFD')) {
-    try { s = new TextDecoder('gbk').decode(u8); } catch (e) { /* ignore */ }
-  }
+  if (s.includes('\uFFFD')) { try { s = new TextDecoder('gbk').decode(u8); } catch (e) { /* ignore */ } }
   return s;
 }
 async function inflateRaw(u8) {
-  if (typeof DecompressionStream === 'undefined') {
-    throw new Error('当前浏览器不支持 zip 解压，请先手动解压后再拖入 CSV');
-  }
+  if (typeof DecompressionStream === 'undefined') throw new Error('当前浏览器不支持 zip 解压，请先解压后再拖入 CSV');
   const stream = new Blob([u8]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
@@ -316,7 +540,6 @@ async function readZip(buf) {
   return out;
 }
 
-/* ============================ 文件识别与归集 ============================ */
 function classify(name, text) {
   const rows = parseCSV(text);
   if (!rows.length) return null;
@@ -350,560 +573,1281 @@ async function collect(files) {
   return { cost, amount, names };
 }
 
-/* ============================ 分析 ============================ */
-function blankBucket() { return { req: 0, hit: 0, miss: 0, out: 0, cost: 0, other: 0 }; }
-function bump(o, type, n) {
-  if (type === 'request_count') o.req += n;
-  else if (type === 'input_cache_hit_tokens') o.hit += n;
-  else if (type === 'input_cache_miss_tokens') o.miss += n;
-  else if (type === 'output_tokens') o.out += n;
-  else o.other += n;
+/* ============================================================
+   全局状态
+   ============================================================ */
+const S = {
+  raw: { cost: [], amount: [], names: [] },
+  f: { from: '', to: '', models: new Set(), keys: new Set(), users: new Set(), types: new Set() },
+  compare: true,
+  metric: 'cost',
+  dim: 'date',
+  q: '',
+  page: 1,
+  pageSize: 15,
+  sort: {
+    date: { k: 'date', d: 1 },
+    key: { k: 'cost', d: -1 },
+    model: { k: 'cost', d: -1 },
+    type: { k: 'cost', d: -1 }
+  },
+  selDate: null,
+  A: null
+};
+
+/* ============================================================
+   聚合引擎
+   ============================================================ */
+const mkBucket = () => ({ cost: 0, req: 0, hit: 0, miss: 0, out: 0, other: 0, byType: new Map() });
+
+function addTo(B, type, amount, price, cost) {
+  if (type === 'request_count') B.req += amount;
+  else if (type === 'input_cache_hit_tokens') B.hit += amount;
+  else if (type === 'input_cache_miss_tokens') B.miss += amount;
+  else if (type === 'output_tokens') B.out += amount;
+  else B.other += amount;
+  B.cost += cost;
+  let t = B.byType.get(type);
+  if (!t) { t = { amount: 0, cost: 0, prices: new Map() }; B.byType.set(type, t); }
+  t.amount += amount;
+  t.cost += cost;
+  if (price > 0) t.prices.set(price, (t.prices.get(price) || 0) + 1);
 }
 
-function analyze(costRows, amountRows) {
-  const cost = costRows || [], amt = amountRows || [];
-  const models = [...new Set([...cost.map(r => r.model), ...amt.map(r => r.model)].filter(Boolean))];
-  const users = [...new Set([...cost.map(r => r.user_id), ...amt.map(r => r.user_id)].filter(Boolean))];
-  const currency = (cost.find(r => r.currency) || {}).currency || 'CNY';
-  const wallets = [...new Set(cost.map(r => r.wallet_type).filter(Boolean))];
+function shape(B, name) {
+  const input = B.hit + B.miss;
+  const tokens = input + B.out + B.other;
+  return {
+    name, cost: B.cost, req: B.req, hit: B.hit, miss: B.miss, out: B.out, other: B.other,
+    input, tokens, hitRate: input ? B.hit / input : 0,
+    perReq: B.req ? B.cost / B.req : 0,
+    inputPerReq: B.req ? input / B.req : 0,
+    byType: B.byType
+  };
+}
 
-  /* cost 表：权威费用 */
-  const dayCost = new Map();
-  let costTotal = 0;
-  for (const r of cost) {
-    const d = DAY(r.start_time_iso); if (!d) continue;
-    const v = N(r.cost); costTotal += v;
-    dayCost.set(d, (dayCost.get(d) || 0) + v);
+function passFilters(r, isCost, skipType) {
+  const F = S.f;
+  const d = DAY(r.start_time_iso);
+  if (!d) return false;
+  if (F.from && d < F.from) return false;
+  if (F.to && d > F.to) return false;
+  if (F.users.size && !F.users.has(r.user_id)) return false;
+  if (F.models.size && !F.models.has(r.model || '（未知模型）')) return false;
+  if (!isCost) {
+    if (F.keys.size && !F.keys.has(r.api_key_name || r.api_key || '（未命名）')) return false;
+    if (!skipType && F.types.size && !F.types.has(r.type || '')) return false;
+  }
+  return true;
+}
+
+function compute() {
+  const amount = S.raw.amount, costRows = S.raw.cost;
+  const dayM = new Map(), keyM = new Map(), modelM = new Map(), typeM = new Map(), tierM = new Map();
+  const m = (mp, k) => { if (!mp.has(k)) mp.set(k, mkBucket()); return mp.get(k); };
+  let calcTotal = 0;
+
+  for (const r of amount) {
+    if (!passFilters(r, false)) continue;
+    const amt = N(r.amount), price = N(r.price), c = price * amt;
+    const type = r.type || '';
+    const key = r.api_key_name || r.api_key || '（未命名）';
+    const model = r.model || '（未知模型）';
+    calcTotal += c;
+    addTo(m(dayM, DAY(r.start_time_iso)), type, amt, price, c);
+    addTo(m(keyM, key), type, amt, price, c);
+    addTo(m(modelM, model), type, amt, price, c);
+    addTo(m(typeM, type), type, amt, price, c);
+    if (price > 0) addTo(m(tierM, model + '|' + type + '|' + price), type, amt, price, c);
   }
 
-  /* amount 表：用量与折算费用 */
-  const dayMap = new Map(), typeMap = new Map(), keyMap = new Map(), modelMap = new Map(), tierMap = new Map();
-  let calcTotal = 0;
-  const get = (map, k, init) => { if (!map.has(k)) map.set(k, init()); return map.get(k); };
+  /* 计费项全集（不受 types 筛选影响，保证图例不会消失） */
+  const typeAllM = new Map();
+  for (const r of amount) {
+    if (!passFilters(r, false, true)) continue;
+    const amt = N(r.amount), price = N(r.price);
+    addTo(m(typeAllM, r.type || ''), r.type || '', amt, price, price * amt);
+  }
 
-  for (const r of amt) {
-    const d = DAY(r.start_time_iso);
-    const type = r.type || '';
-    const price = N(r.price);
-    const amount = N(r.amount);
-    const c = price * amount;
-    calcTotal += c;
-    const kName = r.api_key_name || r.api_key || '（未命名）';
-    const mName = r.model || '（未知模型）';
-
-    const dm = get(dayMap, d, blankBucket); dm.cost += c; bump(dm, type, amount);
-    const tm = get(typeMap, type, () => ({ amount: 0, cost: 0, prices: new Set() }));
-    tm.amount += amount; tm.cost += c; if (price) tm.prices.add(price);
-    const km = get(keyMap, kName, blankBucket); km.cost += c; bump(km, type, amount);
-    const mm = get(modelMap, mName, blankBucket); mm.cost += c; bump(mm, type, amount);
-    if (price) {
-      const t = get(tierMap, mName + '|' + type + '|' + price, () => ({ model: mName, type, price, amount: 0, cost: 0 }));
-      t.amount += amount; t.cost += c;
+  /* 无 amount 明细时，降级为只用 cost 表（仅能看费用） */
+  let costOnly = 0;
+  if (!amount.length) {
+    for (const r of costRows) {
+      if (!passFilters(r, true)) continue;
+      const v = N(r.cost);
+      costOnly += v;
+      m(dayM, DAY(r.start_time_iso)).cost += v;
     }
   }
 
-  /* 日期序列 */
-  const allDates = [...new Set([...dayCost.keys(), ...dayMap.keys()])].filter(Boolean).sort();
-  const dates = allDates.length > 1 ? dateRange(allDates[0], allDates[allDates.length - 1]) : allDates;
+  /* 日期序列（含中间无数据的天） */
+  const allDates = [...new Set([
+    ...amount.filter(r => passFilters(r, false)).map(r => DAY(r.start_time_iso)),
+    ...costRows.filter(r => passFilters(r, true)).map(r => DAY(r.start_time_iso))
+  ])].filter(Boolean).sort();
 
-  const hasCostTable = cost.length > 0;
-  const totalCost = hasCostTable ? costTotal : calcTotal;
-
-  const daily = dates.map(d => {
-    const a = dayMap.get(d) || blankBucket();
-    const costVal = hasCostTable ? (dayCost.get(d) || 0) : a.cost;
-    const input = a.hit + a.miss;
-    return { date: d, cost: costVal, req: a.req, hit: a.hit, miss: a.miss, out: a.out, input, hitRate: input ? a.hit / input : 0 };
+  const days = allDates.length > 1 ? dateRange(allDates[0], allDates[allDates.length - 1]) : allDates;
+  const daily = days.map(d => {
+    const B = dayM.get(d);
+    const s = B ? shape(B, d) : shape(mkBucket(), d);
+    s.date = d;
+    return s;
   });
 
-  const sum = daily.reduce((o, d) => {
-    o.cost += d.cost; o.req += d.req; o.hit += d.hit; o.miss += d.miss; o.out += d.out;
-    return o;
-  }, { cost: 0, req: 0, hit: 0, miss: 0, out: 0 });
-  const totalInput = sum.hit + sum.miss;
-  const totalTokens = totalInput + sum.out;
+  const total = daily.reduce((acc, d) => {
+    acc.cost += d.cost; acc.req += d.req; acc.hit += d.hit; acc.miss += d.miss;
+    acc.out += d.out; acc.other += d.other; acc.tokens += d.tokens;
+    return acc;
+  }, { cost: 0, req: 0, hit: 0, miss: 0, out: 0, other: 0, tokens: 0 });
+  total.input = total.hit + total.miss;
+  total.hitRate = total.input ? total.hit / total.input : 0;
+  total.perReq = total.req ? total.cost / total.req : 0;
+  total.tokens = total.input + total.out + total.other;
 
-  const types = [...typeMap.entries()]
-    .filter(([type]) => type !== 'request_count')
-    .map(([type, v]) => {
-      const prices = [...v.prices].sort((a, b) => a - b);
-      return {
-        type, amount: v.amount, cost: v.cost, prices,
-        priceMin: prices[0] || 0, priceMax: prices[prices.length - 1] || 0,
-        tokenShare: totalTokens ? v.amount / totalTokens : 0,
-        costShare: totalCost ? v.cost / totalCost : 0
-      };
-    }).sort((a, b) => b.cost - a.cost);
+  const pack = mp => [...mp.entries()].map(([k, B]) => shape(B, k)).sort((a, b) => b.cost - a.cost);
+  const byKey = pack(keyM), byModel = pack(modelM);
+  const byType = [...typeM.entries()].map(([type, B]) => {
+    const s = shape(B, type);
+    s.type = type;
+    s.share = total.cost ? B.cost / total.cost : 0;
+    s.tokenShare = total.tokens ? s.tokens / total.tokens : 0;
+    const t = B.byType.get(type);
+    const prices = t ? [...t.prices.keys()].sort((a, b) => a - b) : [];
+    s.priceMin = prices[0] || 0;
+    s.priceMax = prices[prices.length - 1] || 0;
+    s.prices = prices;
+    return s;
+  }).sort((a, b) => b.cost - a.cost);
 
-  const pack = (name, b) => {
-    const input = b.hit + b.miss;
-    return {
-      name, cost: b.cost, req: b.req, hit: b.hit, miss: b.miss, out: b.out, input,
-      hitRate: input ? b.hit / input : 0,
-      perReq: b.req ? b.cost / b.req : 0,
-      inputPerReq: b.req ? input / b.req : 0
-    };
-  };
-  const byKey = [...keyMap.entries()].map(([n, b]) => pack(n, b)).sort((a, b) => b.cost - a.cost);
-  const byModel = [...modelMap.entries()].map(([n, b]) => pack(n, b)).sort((a, b) => b.cost - a.cost);
+  const allCost = [...typeAllM.values()].reduce((s, B) => s + B.cost, 0);
+  const byTypeAll = [...typeAllM.entries()].map(([type, B]) => {
+    const s = shape(B, type);
+    s.type = type;
+    s.share = allCost ? B.cost / allCost : 0;
+    return s;
+  }).filter(s => s.type !== 'request_count').sort((a, b) => b.cost - a.cost);
 
-  const tiers = [...tierMap.values()].sort((a, b) =>
-    a.model.localeCompare(b.model) || a.type.localeCompare(b.type) || b.price - a.price);
+  const tiers = [...tierM.entries()].map(([k, B]) => {
+    const [model, type, price] = k.split('|');
+    return { model, type, price: Number(price), amount: B.byType.get(type).amount, cost: B.cost };
+  }).sort((a, b) => a.model.localeCompare(b.model) || a.type.localeCompare(b.type) || b.price - a.price);
 
-  /* 同一「模型 + 计费项」出现多档单价（峰谷折扣或不同计费批次） */
-  const tierGroups = new Map();
+  const groups = new Map();
   tiers.forEach(t => {
     const k = t.model + '|' + t.type;
-    if (!tierGroups.has(k)) tierGroups.set(k, []);
-    tierGroups.get(k).push(t);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(t);
   });
-  const multiTier = [...tierGroups.values()]
-    .filter(list => list.length > 1)
-    .map(list => {
-      const prices = list.map(t => t.price).sort((a, b) => a - b);
-      const top = prices[prices.length - 1];
-      const high = list.filter(t => t.price === top);
-      const amount = list.reduce((s, t) => s + t.amount, 0);
-      return {
-        model: list[0].model, type: list[0].type, prices,
-        ratio: prices[0] ? top / prices[0] : 1,
-        highCost: high.reduce((s, t) => s + t.cost, 0),
-        highShare: amount ? high.reduce((s, t) => s + t.amount, 0) / amount : 0
-      };
-    });
+  const multiTier = [...groups.values()].filter(l => l.length > 1).map(list => {
+    const prices = list.map(t => t.price).sort((a, b) => a - b);
+    const top = prices[prices.length - 1];
+    const amountSum = list.reduce((s, t) => s + t.amount, 0);
+    const high = list.filter(t => t.price === top);
+    const highAmt = high.reduce((s, t) => s + t.amount, 0);
+    return {
+      model: list[0].model, type: list[0].type, prices,
+      ratio: prices[0] ? top / prices[0] : 1,
+      highCost: high.reduce((s, t) => s + t.cost, 0),
+      highShare: amountSum ? highAmt / amountSum : 0
+    };
+  });
 
   return {
-    models, users, currency, wallets, dates, daily, byKey, byModel, types, tiers, multiTier,
-    total: { ...sum, cost: totalCost, input: totalInput, tokens: totalTokens, hitRate: totalInput ? sum.hit / totalInput : 0 },
-    costTotal, calcTotal,
-    mismatch: hasCostTable && amt.length ? Math.abs(calcTotal - costTotal) : null,
-    hasCostTable, hasAmount: amt.length > 0,
-    perReq: sum.req ? totalCost / sum.req : 0,
-    first: dates[0], last: dates[dates.length - 1]
+    daily, byKey, byModel, byType, byTypeAll, tiers, multiTier, total,
+    range: { first: days[0] || '', last: days[days.length - 1] || '', days: days.length },
+    calcTotal,
+    hasAmount: amount.length > 0,
+    costOnly
   };
 }
 
-/* ============================ 渲染 ============================ */
-let DATA = null, FILE_NAMES = [];
-
-const hitTone = r => (r >= 0.95 ? 'ok' : r >= 0.85 ? 'mid' : 'bad');
-const hitPill = r => `<span class="pill ${hitTone(r)}">${pct(r)}</span>`;
-const axNum = v => (v >= 100 ? Math.round(v).toLocaleString('en-US') : v >= 10 ? v.toFixed(0) : v >= 1 ? v.toFixed(1) : v.toFixed(2));
-
-function renderMeta(d) {
-  const tags = [
-    `周期 <b>${d.first || '-'} ~ ${d.last || '-'}</b> · ${d.dates.length} 天`,
-    `用户 <b>${d.users.length}</b>`,
-    `币种 <b>${esc(d.currency)}</b>`
-  ];
-  if (d.wallets.length) tags.push(`钱包 <b>${esc(d.wallets.join(' / '))}</b>`);
-  if (FILE_NAMES.length) tags.push(`文件 <b>${esc(FILE_NAMES.join(' · '))}</b>`);
-  $('#meta').innerHTML = tags.map(t => `<span class="tag">${t}</span>`).join('');
+/* 环比：取相同长度的上一个周期 */
+function prevPeriodTotal() {
+  const A = S.A;
+  if (!A || !A.range.first) return null;
+  const len = A.range.days;
+  const from = shiftDay(A.range.first, -len);
+  const to = shiftDay(A.range.first, -1);
+  if (!S.bounds || from < S.bounds.first) return null;
+  const saved = { from: S.f.from, to: S.f.to };
+  S.f.from = from; S.f.to = to;
+  const res = compute();
+  S.f.from = saved.from; S.f.to = saved.to;
+  return { total: res.total, from, to };
 }
 
-function renderCards(d) {
-  const t = d.total;
-  const days = d.dates.length || 1;
-  const peak = Math.max.apply(null, d.daily.map(x => x.cost).concat([0]));
+/* ============================================================
+   筛选条
+   ============================================================ */
+function multiSelect(id, label, values, set) {
+  const sel = [...set];
+  const txt = sel.length === 0 ? '全部' : sel.length === 1 ? sel[0] : sel.length + ' 项';
+  const open = S.openMulti === id ? ' on' : '';
+  return `<div class="fgroup"><span class="lab">${label}</span>
+    <div class="multi" data-multi="${id}">
+      <button data-pop><span class="lb">${esc(txt)}</span><span class="cnt">${sel.length || values.length}</span></button>
+      <div class="pop${open}">
+        ${values.length ? values.map(v => `<label><input type="checkbox" value="${esc(v)}" ${set.has(v) ? 'checked' : ''}>${esc(v)}</label>`).join('')
+      : '<div class="empty">无选项</div>'}
+      </div>
+    </div></div>`;
+}
+
+function renderFilters() {
+  const b = S.bounds;
+  const f = S.f;
+  const dateLabel = !f.from && !f.to ? `全部 ${b.days} 天` : `${f.from || b.first} → ${f.to || b.last}`;
+  const seg = (v, t) => `<button data-preset="${v}" class="${S.preset === v ? 'on' : ''}">${t}</button>`;
+  $('#filterbar').innerHTML = `
+    <div class="fgroup"><span class="lab">日期</span>
+      <div class="seg" id="presetSeg">${seg('all', '全部')}${seg('7', '近 7 天')}${seg('30', '近 30 天')}</div>
+      <div class="drange">
+        <input type="date" class="search" id="dFrom" value="${f.from || b.first}" min="${b.first}" max="${b.last}">
+        <span class="lab">→</span>
+        <input type="date" class="search" id="dTo" value="${f.to || b.last}" min="${b.first}" max="${b.last}">
+      </div>
+    </div>
+    ${multiSelect('model', '模型', S.options.models, f.models)}
+    ${multiSelect('key', 'Key', S.options.keys, f.keys)}
+    ${S.options.users.length > 1 ? multiSelect('user', '用户', S.options.users, f.users) : ''}
+    <button class="linkbtn ${S.compare && S.prev ? 'on' : ''}" data-act="compare" title="与上一个等长周期对比">环比：${!S.compare ? '关' : S.prev ? '开' : '无上期'}</button>
+    <button class="linkbtn" data-act="reset">重置</button>`;
+}
+
+/* ============================================================
+   KPI
+   ============================================================ */
+function delta(cur, prev, good) {
+  if (prev === null || prev === undefined || !isFinite(prev) || prev === 0) return '';
+  const d = (cur - prev) / prev;
+  const up = d > 0.001, down = d < -0.001;
+  if (!up && !down) return `<span class="dim">持平</span>`;
+  const cls = good === false ? (up ? 'pos' : 'neg') : (up ? 'neg' : 'pos');
+  return `<span class="${cls}">${up ? '↑' : '↓'} ${pct(Math.abs(d))}</span> <span class="dim">较上期</span>`;
+}
+
+function renderKPI() {
+  const A = S.A, t = A.total;
+  const n = A.range.days || 1;
+  const p = S.compare ? S.prev : null;
+  const pt = p ? p.total : null;
+  const tail = (label, txt, d) => `${label} ${txt}${d ? ' · ' + d : ''}`;
   const cards = [
-    { k: '总费用', cls: '', v: `${cny(t.cost)}<small>${esc(d.currency)}</small>`, s: `日均 ${cny(t.cost / days)} · 峰值 ${cny(peak)}` },
-    { k: '请求数', cls: 'p', v: `${int(t.req)}<small>次</small>`, s: `日均 ${int(t.req / days)} 次` }
+    {
+      k: '总费用', cls: '', m: 'cost',
+      v: `${cny(t.cost)}<small>${esc(S.currency)}</small>`,
+      s: tail('日均', cny(t.cost / n), delta(t.cost, pt && pt.cost))
+    },
+    {
+      k: '请求数', cls: 'v', m: 'req',
+      v: `${int(t.req)}`,
+      s: tail('日均', int(t.req / n), delta(t.req, pt && pt.req))
+    }
   ];
-  if (d.hasAmount) {
-    cards.push({ k: '总 token', cls: 'g', v: tk(t.tokens), s: `输入 ${tk(t.input)} · 输出 ${tk(t.out)}` });
-    cards.push({ k: '缓存命中率', cls: 'g', v: pct(t.hitRate), s: `命中 ${tk(t.hit)} / 未命中 ${tk(t.miss)}` });
+  if (A.hasAmount) {
+    cards.push({ k: '总 token', cls: 'g', m: 'tokens', v: tk(t.tokens), s: `输入 ${tk(t.input)} · 输出 ${tk(t.out)}` });
+    cards.push({ k: '缓存命中率', cls: 'g', m: 'rate', v: pct(t.hitRate), s: `命中 ${tk(t.hit)} / 未命中 ${tk(t.miss)}` });
+    cards.push({ k: '每请求成本', cls: '', v: `${cny(t.perReq)}<small>${esc(S.currency)}</small>`, s: `平均输入 ${int(t.input / (t.req || 1))} tokens` });
+    cards.push({ k: '日均 × 30', cls: 'a', v: `${cny(t.cost / n * 30)}<small>${esc(S.currency)}</small>`, s: '按月估算' });
   }
-  cards.push({ k: '每请求成本', cls: '', v: `${cny(d.perReq)}<small>${esc(d.currency)}</small>`, s: d.hasAmount ? `平均输入 ${int(t.input / (t.req || 1))} tokens` : '按请求数摊薄' });
-  if (d.hasAmount && t.tokens) {
-    cards.push({ k: '有效单价', cls: 'a', v: cny(d.costTotal / t.tokens * 1e6), s: `元 / 百万 token（混合价）` });
-  }
-  $('#cards').innerHTML = cards.map(c =>
-    `<div class="card ${c.cls}"><div class="k">${c.k}</div><div class="v">${c.v}</div><div class="s">${c.s}</div></div>`
+  $('#kpi').innerHTML = cards.map(c =>
+    `<div class="kcard ${c.cls} ${c.m && c.m === S.metric ? 'act' : ''}" ${c.m ? `data-metric="${c.m}" title="点击切换趋势图指标"` : ''}>
+      <div class="k">${c.k}</div><div class="v">${c.v}</div><div class="s">${c.s}</div></div>`
   ).join('');
 }
 
-function drawDaily(host, daily) {
-  const W = Math.max(host.clientWidth || 860, 460);
-  const H = 302, padL = 54, padR = 56, padT = 18, padB = 46;
-  const iw = W - padL - padR, ih = H - padT - padB;
-  const maxCost = Math.max.apply(null, daily.map(d => d.cost).concat([0.0001])) || 1;
-  const maxReq = Math.max.apply(null, daily.map(d => d.req).concat([1])) || 1;
-  const step = iw / Math.max(daily.length, 1);
-  const bw = Math.max(6, Math.min(46, step * 0.52));
-  const yC = v => padT + ih - (v / maxCost) * ih;
-  const yR = v => padT + ih - (v / maxReq) * ih;
+/* ============================================================
+   Tooltip
+   ============================================================ */
+function showTip(html, x, y) {
+  const tip = $('#tip');
+  tip.innerHTML = html;
+  tip.classList.add('on');
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let left = x + 15, top = y - h - 14;
+  if (left + w > window.innerWidth - 10) left = x - w - 15;
+  if (top < 10) top = y + 20;
+  tip.style.left = left + 'px';
+  tip.style.top = top + 'px';
+}
+function hideTip() { $('#tip').classList.remove('on'); }
 
-  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-  s += `<defs><linearGradient id="gb" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#5c9bfb"/><stop offset="1" stop-color="#2b5ea8" stop-opacity=".3"/></linearGradient></defs>`;
-  for (let i = 0; i <= 4; i++) {
-    const y = padT + ih * i / 4;
-    s += `<line class="grid-line" x1="${padL}" y1="${y.toFixed(1)}" x2="${padL + iw}" y2="${y.toFixed(1)}"/>`;
-    s += `<text class="axis-txt" x="${padL - 9}" y="${(y + 3.5).toFixed(1)}" text-anchor="end">${axNum(maxCost * (1 - i / 4))}</text>`;
-    s += `<text class="axis-txt" x="${padL + iw + 9}" y="${(y + 3.5).toFixed(1)}" fill="#3fae8d">${axNum(maxReq * (1 - i / 4))}</text>`;
+/* ============================================================
+   趋势图
+   ============================================================ */
+const METRIC = {
+  cost: { unit: '费用', get: d => d.cost, fmt: cny },
+  req: { unit: '请求', get: d => d.req, fmt: int },
+  tokens: { unit: 'Token', get: d => d.tokens, fmt: tk },
+  rate: { unit: '命中率', get: d => d.hitRate, fmt: v => pct(v) }
+};
+
+function renderTrend() {
+  const host = $('#chart');
+  const daily = S.A.daily;
+  hideTip();
+  if (!daily.length) {
+    host.innerHTML = '<div class="empty-chart">当前筛选下没有数据</div>';
+    return;
   }
-  s += `<text class="axis-txt" x="${padL - 9}" y="${padT - 6}" text-anchor="end" fill="#7d8ea3">费用</text>`;
-  s += `<text class="axis-txt" x="${padL + iw + 9}" y="${padT - 6}" fill="#3fae8d">请求</text>`;
+  const metric = S.metric;
+  const W = Math.max(host.clientWidth || 900, 460);
+  const H = W < 560 ? 252 : 296, padL = 56, padR = 18, padT = 26, padB = 44;
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const step = iw / daily.length;
+  const bw = Math.max(5, Math.min(42, step * 0.52));
 
+  let maxV = 0;
+  if (metric === 'rate') maxV = 1;
+  else if (metric === 'tokens') {
+    daily.forEach(d => { maxV = Math.max(maxV, d.hit + d.miss + d.out + d.other); });
+  } else daily.forEach(d => { maxV = Math.max(maxV, METRIC[metric].get(d)); });
+  if (maxV <= 0) maxV = 1;
+
+  const y = v => padT + ih - (v / maxV) * ih;
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img">`;
+  s += `<defs>
+    <linearGradient id="gc" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6ea8ff"/><stop offset="1" stop-color="#2d5f9e" stop-opacity=".35"/></linearGradient>
+    <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3ddbb0" stop-opacity=".28"/><stop offset="1" stop-color="#3ddbb0" stop-opacity="0"/></linearGradient>
+  </defs>`;
+
+  /* 网格 + Y 轴 */
+  for (let i = 0; i <= 4; i++) {
+    const gy = padT + ih * i / 4;
+    const val = maxV * (1 - i / 4);
+    s += `<line class="gline" x1="${padL}" y1="${gy.toFixed(1)}" x2="${padL + iw}" y2="${gy.toFixed(1)}"/>`;
+    s += `<text class="axis" x="${padL - 10}" y="${(gy + 3.5).toFixed(1)}" text-anchor="end">${metric === 'rate' ? Math.round(val * 100) + '%' : axNum(val)}</text>`;
+  }
+  s += `<text class="axis s" x="${padL}" y="10" text-anchor="start">${METRIC[metric].unit}</text>`;
+
+  /* 柱 / 折线 */
+  if (metric === 'rate') {
+    const pts = daily.map((d, i) => [padL + step * i + step / 2, y(d.hitRate)]);
+    s += `<path d="M${pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L')}L${pts[pts.length - 1][0].toFixed(1)} ${padT + ih}L${pts[0][0].toFixed(1)} ${padT + ih}Z" fill="url(#gr)"/>`;
+    s += `<path d="M${pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L')}" fill="none" stroke="#3ddbb0" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    pts.forEach((p, i) => {
+      s += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${S.selDate === daily[i].date ? 5 : 3}" fill="#0a1017" stroke="#3ddbb0" stroke-width="2"/>`;
+    });
+  } else {
+    daily.forEach((d, i) => {
+      const cx = padL + step * i + step / 2;
+      const sel = S.selDate === d.date ? ' sel' : '';
+      if (metric === 'tokens') {
+        const parts = [
+          { v: d.hit, c: '#3ddbb0' },
+          { v: d.miss, c: '#f5b850' },
+          { v: d.out + d.other, c: '#5b9dff' }
+        ];
+        let base = padT + ih;
+        parts.forEach(p => {
+          const hgt = (p.v / maxV) * ih;
+          if (hgt <= 0.4) { base -= hgt; return; }
+          base -= hgt;
+          s += `<rect class="bar${sel}" x="${(cx - bw / 2).toFixed(1)}" y="${base.toFixed(1)}" width="${bw.toFixed(1)}" height="${hgt.toFixed(1)}" fill="${p.c}" opacity=".85" rx="1.5"/>`;
+        });
+      } else {
+        const v = METRIC[metric].get(d);
+        const hgt = Math.max(0, (v / maxV) * ih);
+        s += `<rect class="bar${sel}" x="${(cx - bw / 2).toFixed(1)}" y="${(padT + ih - hgt).toFixed(1)}" width="${bw.toFixed(1)}" height="${hgt.toFixed(1)}" rx="3" fill="url(#gc)"/>`;
+      }
+    });
+  }
+
+  /* X 轴标签（按可用宽度自适应密度）*/
+  const skip = Math.max(1, Math.ceil(daily.length / Math.max(4, Math.floor(iw / 96))));
+  const showWd = iw > 560;
   daily.forEach((d, i) => {
+    if (i % skip !== 0 && i !== daily.length - 1) return;
     const cx = padL + step * i + step / 2;
-    const bh = Math.max(0, (d.cost / maxCost) * ih);
-    s += `<rect class="bar" x="${(cx - bw / 2).toFixed(1)}" y="${(padT + ih - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="4" fill="url(#gb)">` +
-      `<title>${d.date} ${weekday(d.date)}\n费用 ${cny(d.cost)} ${d.currency || ''}\n请求 ${int(d.req)}\n缓存命中率 ${pct(d.hitRate)}\n输入 ${tk(d.input)} · 输出 ${tk(d.out)}</title></rect>`;
-    s += `<text class="axis-txt" x="${cx.toFixed(1)}" y="${padT + ih + 16}" text-anchor="middle">${d.date.slice(5)}</text>`;
-    s += `<text class="axis-txt" x="${cx.toFixed(1)}" y="${padT + ih + 30}" text-anchor="middle" style="font-size:9.5px;opacity:.75">${weekday(d.date)}</text>`;
+    s += `<text class="axis" x="${cx.toFixed(1)}" y="${padT + ih + 16}" text-anchor="middle">${d.date.slice(5)}</text>`;
+    if (showWd) s += `<text class="axis" x="${cx.toFixed(1)}" y="${padT + ih + 29}" text-anchor="middle" style="opacity:.6;font-size:9.5px">${weekday(d.date)}</text>`;
   });
 
-  const pts = daily.map((d, i) => [padL + step * i + step / 2, yR(d.req)]);
-  s += `<polyline fill="none" stroke="#38d9a9" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".85" points="${pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}"/>`;
-  pts.forEach((p, i) => {
-    s += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.2" fill="#0a0e13" stroke="#38d9a9" stroke-width="2"><title>${daily[i].date} 请求 ${int(daily[i].req)}</title></circle>`;
+  /* 命中区域 */
+  daily.forEach((d, i) => {
+    s += `<rect class="hit" data-i="${i}" x="${(padL + step * i).toFixed(1)}" y="${padT}" width="${step.toFixed(1)}" height="${ih}"/>`;
   });
+  s += `<line class="cursor" id="curLine" x1="0" y1="${padT}" x2="0" y2="${padT + ih}" opacity="0"/>`;
   s += `</svg>`;
   host.innerHTML = s;
+  host.classList.remove('hovering');
+
+  const svg = host.querySelector('svg');
+  const line = host.querySelector('#curLine');
+
+  svg.addEventListener('mousemove', ev => {
+    const r = svg.getBoundingClientRect();
+    const scale = W / r.width;
+    const xv = (ev.clientX - r.left) * scale;
+    const i = Math.floor((xv - padL) / step);
+    if (i < 0 || i >= daily.length) return;
+    const d = daily[i];
+    const cx = padL + step * i + step / 2;
+    line.setAttribute('x1', cx); line.setAttribute('x2', cx);
+    line.setAttribute('opacity', '1');
+    host.classList.add('hovering');
+    showTip(`
+      <div class="t">${d.date}<span>${weekday(d.date)}</span></div>
+      <div class="r"><span>费用</span><b>${cny(d.cost)} ${esc(S.currency)}</b></div>
+      <div class="r"><span>请求</span><b>${int(d.req)}</b></div>
+      <div class="r"><span>输入</span><b>${tk(d.input)}</b></div>
+      <div class="r"><span>输出</span><b>${tk(d.out)}</b></div>
+      <div class="r"><span>命中率</span><b>${d.input ? pct(d.hitRate) : '—'}</b></div>`, ev.clientX, ev.clientY);
+  });
+  svg.addEventListener('mouseleave', () => {
+    line.setAttribute('opacity', '0');
+    host.classList.remove('hovering');
+    hideTip();
+  });
+  svg.addEventListener('click', ev => {
+    const hit = ev.target.closest('[data-i]');
+    if (!hit) return;
+    const d = daily[Number(hit.dataset.i)];
+    if (d) openDayDrawer(d.date);
+  });
 }
 
-function renderDailyTable(d) {
-  const head = ['日期', '星期', '费用', '请求数', '输入', '其中未命中', '输出', '输入/请求', '缓存命中率'];
-  const rows = d.daily.map(x => `<tr>
-    <td>${x.date}</td><td class="dim">${weekday(x.date)}</td>
-    <td><b>${cny(x.cost)}</b></td><td>${int(x.req)}</td>
-    <td>${tk(x.input)}</td><td>${tk(x.miss)}</td><td>${tk(x.out)}</td>
-    <td>${x.req ? int(x.input / x.req) : '—'}</td><td>${x.input ? hitPill(x.hitRate) : '<span class="dim">—</span>'}</td>
-  </tr>`).join('');
-  const t = d.total;
-  const totalRow = `<tr class="total"><td>合计</td><td class="dim">${d.dates.length} 天</td>
-    <td>${cny(t.cost)}</td><td>${int(t.req)}</td><td>${tk(t.input)}</td><td>${tk(t.miss)}</td>
-    <td>${tk(t.out)}</td><td>${t.req ? int(t.input / t.req) : '—'}</td><td>${t.input ? hitPill(t.hitRate) : '—'}</td></tr>`;
-  $('#tblDaily').innerHTML = `<table><thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}${totalRow}</tbody></table>`;
+function axNum(v) {
+  if (v >= 1e9) return (v / 1e9).toFixed(1) + 'B';
+  if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+  if (v >= 1e4) return (v / 1000).toFixed(0) + 'K';
+  if (v >= 100) return Math.round(v).toLocaleString('en-US');
+  if (v >= 10) return v.toFixed(0);
+  return v >= 1 ? v.toFixed(1) : v.toFixed(2);
 }
 
-function renderStruct(d) {
+/* ============================================================
+   成本结构（环形 + 可点击图例）
+   ============================================================ */
+function renderStruct() {
   const host = $('#struct');
-  if (!d.hasAmount || !d.types.length) {
-    host.innerHTML = '<div class="dim" style="font-size:12.5px">未找到 amount 明细，无法拆解成本结构。</div>';
+  const legend = S.A.byTypeAll;
+  const picked = S.A.byType.filter(t => t.type !== 'request_count' && t.cost > 0);
+  const total = picked.reduce((s, t) => s + t.cost, 0);
+  if (!legend.length) {
+    host.innerHTML = '<div class="skel">当前筛选下没有费用数据</div>';
     return;
   }
-  const items = d.types;
-  const bar = get => `<div class="stack">${items.map((t, i) => {
-    const v = Math.max(get(t), 0);
-    return `<div style="flex:${v} 1 0%;background:${typeColor(t.type, i)}" title="${typeLabel(t.type)} ${pct(v)}"></div>`;
-  }).join('')}</div>`;
-  const rows = items.map((t, i) => `<div class="lg-row">
-      <span class="lg-dot" style="background:${typeColor(t.type, i)}"></span>
-      <span class="lg-name">${esc(typeLabel(t.type))}</span>
-      <span>${t.type === 'request_count' ? int(t.amount) : tk(t.amount)}</span>
-      <span>${cny(t.cost)}</span>
-      <span>${pct(t.costShare)}</span>
-    </div>`).join('');
-  host.innerHTML = `
-    <div class="dim" style="font-size:11px;letter-spacing:.5px;text-transform:uppercase;font-weight:600">token 占比</div>
-    ${bar(t => t.tokenShare)}
-    <div class="dim" style="font-size:11px;letter-spacing:.5px;text-transform:uppercase;font-weight:600">费用占比</div>
-    ${bar(t => t.costShare)}
-    <div class="stack-legend" style="margin-top:12px">
-      <div class="lg-row lg-head"><span></span><span class="lg-name">计费项</span><span>token</span><span>费用</span><span>费用占比</span></div>
-      ${rows}
-    </div>`;
-}
-
-function renderKeys(d) {
-  if (!d.byKey.length) { $('#keyBox').innerHTML = '<div class="dim" style="font-size:12.5px">无数据</div>'; return; }
-  const rows = d.byKey.map(k => `<tr>
-    <td>${esc(k.name)}</td>
-    <td>${cny(k.cost)}</td>
-    <td class="dim">${pct(d.costTotal ? k.cost / d.costTotal : 0)}</td>
-    <td>${int(k.req)}</td>
-    <td>${k.req ? cny(k.perReq) : '—'}</td>
-    <td>${k.req ? int(k.inputPerReq) : '—'}</td>
-    <td>${k.hit ? hitPill(k.hitRate) : '<span class="dim">—</span>'}</td>
-  </tr>`).join('');
-  $('#keyBox').innerHTML = `<table><thead><tr><th>Key</th><th>费用</th><th>占比</th><th>请求</th><th>每请求</th><th>输入/请求</th><th>命中率</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
-
-function renderModels(d) {
-  if (!d.byModel.length) { $('#modelBox').innerHTML = '<div class="dim" style="font-size:12.5px">无数据</div>'; return; }
-  const max = Math.max.apply(null, d.byModel.map(m => m.cost).concat([0.0001]));
-  $('#modelBox').innerHTML = '<div class="hbar">' + d.byModel.map((m, i) => `
-    <div class="hbar-row">
-      <div class="hbar-label" title="${esc(m.name)}">${esc(m.name)}</div>
-      <div class="hbar-track"><div class="hbar-fill" style="width:${(m.cost / max * 100).toFixed(1)}%;background:${PALETTE[i % PALETTE.length]}"></div></div>
-      <div class="hbar-val">${cny(m.cost)}<small>${pct(d.costTotal ? m.cost / d.costTotal : 0)}</small></div>
-    </div>`).join('') + '</div>' +
-    `<div class="dim" style="font-size:11.5px;margin-top:10px">共 ${d.byModel.length} 个模型 · 请求 ${int(d.total.req)} 次</div>`;
-}
-
-function renderPrice(d) {
-  const host = $('#priceBox');
-  if (!d.tiers.length) {
-    host.innerHTML = '<div class="dim" style="font-size:12.5px">无单价数据（缺少 amount 明细或 price 列）。</div>';
-    return;
-  }
-  let note = '';
-  if (d.multiTier.length) {
-    note = `<div class="notice" style="margin:0 0 12px">同一模型同一计费项出现多档单价：` +
-      d.multiTier.map(m => `<b>${esc(m.model)}</b> · ${esc(typeLabel(m.type))} ${m.prices.map(perM).join(' / ')} 元/百万（相差 ${m.ratio.toFixed(1)} 倍）`).join('；') +
-      `。通常是峰谷时段折扣或不同计费批次，可确认能否把批量任务调度到低价档。</div>`;
-  }
-  const rows = d.tiers.map(t => {
-    const groupTotal = d.tiers.filter(x => x.type === t.type && x.model === t.model).reduce((s, x) => s + x.amount, 0);
-    return `<tr>
-      <td>${esc(t.model)}</td>
-      <td><span style="color:${typeColor(t.type)}">${esc(typeLabel(t.type))}</span></td>
-      <td>${perM(t.price)}</td>
-      <td>${tk(t.amount)}</td>
-      <td class="dim">${groupTotal ? pct(t.amount / groupTotal) : '—'}</td>
-      <td><b>${cny(t.cost)}</b></td>
-    </tr>`;
+  const R = 74, SW = 18, C = 2 * Math.PI * R;
+  let acc = 0;
+  const arcs = picked.map((t, i) => {
+    const frac = total ? t.cost / total : 0;
+    const len = frac * C;
+    const off = -acc * C;
+    acc += frac;
+    const col = typeColor(t.type, i);
+    return `<circle cx="90" cy="90" r="${R}" fill="none" stroke="${col}" stroke-width="${SW}"
+      stroke-dasharray="${Math.max(0, len - 1.5).toFixed(2)} ${(C - len + 1.5).toFixed(2)}"
+      stroke-dashoffset="${off.toFixed(2)}" transform="rotate(-90 90 90)"
+      style="cursor:pointer;transition:opacity .2s"
+      data-type="${esc(t.type)}"><title>${esc(typeLabel(t.type))} ${pct(frac)}</title></circle>`;
   }).join('');
-  host.innerHTML = note + `<div class="tbl-wrap" style="margin-top:0"><table><thead><tr>
-    <th>模型</th><th>计费项</th><th>单价（元/百万）</th><th>token</th><th>档内占比</th><th>费用</th>
-    </tr></thead><tbody>${rows}</tbody></table></div>`;
+
+  host.innerHTML = `<div class="donut-wrap">
+    <div class="donut">
+      <svg width="180" height="180" viewBox="0 0 180 180">
+        <circle cx="90" cy="90" r="${R}" fill="none" stroke="#18212b" stroke-width="${SW}"/>
+        ${arcs}
+      </svg>
+      <div class="mid"><div><div class="m1">${cny(total)}</div><div class="m2">${esc(S.currency)} 合计</div></div></div>
+    </div>
+    <div class="legend">
+      ${legend.map((t, i) => `<div class="lg ${S.f.types.size && !S.f.types.has(t.type) ? 'off' : ''}" data-type="${esc(t.type)}">
+        <span class="d" style="background:${typeColor(t.type, i)}"></span>
+        <span class="n">${esc(typeLabel(t.type))}<em>${tk(t.tokens)} tokens</em></span>
+        <span class="p">${pct(t.share)}</span>
+      </div>`).join('')}
+    </div></div>`;
 }
 
-function buildInsights(d) {
-  const out = [];
-  const t = d.total;
-  if (d.hasAmount && t.input) {
-    const hr = t.hitRate;
-    if (hr >= 0.95) out.push({ l: 'good', h: `缓存命中率 ${pct(hr)}`, x: '前缀复用非常好，长上下文的重复输入已被有效折价，成本已经接近该用法的下限。' });
-    else if (hr >= 0.85) out.push({ l: 'info', h: `缓存命中率 ${pct(hr)}`, x: '表现尚可。把 system prompt、检索到的文件内容固定在 prompt 开头（避免时间戳、随机 ID 等前缀抖动）还能继续提升。' });
-    else out.push({ l: 'warn', h: `缓存命中率仅 ${pct(hr)}`, x: '大量输入按未命中（高价）计费。优先检查每次请求的 prompt 前缀是否发生变化、会话是否被复用。' });
+/* ============================================================
+   表格
+   ============================================================ */
+const pill = v => `<span class="pill ${v >= 0.9 ? 'ok' : v >= 0.6 ? 'mid' : 'bad'}">${pct(v)}</span>`;
 
-    const top = d.types.filter(x => x.cost > 0)[0];
-    if (top) out.push({
-      l: 'info', h: `最大成本项：${typeLabel(top.type)}`,
-      x: `吃掉 ${pct(top.costShare)} 的费用，但只占 token 的 ${pct(top.tokenShare)}。` +
-        (top.type === 'input_cache_miss_tokens' ? '压缩这部分收益最高。'
-          : top.type === 'output_tokens' ? '输出单价最高，控制回复长度比压输入更直接。'
-            : '这部分单价低，量再大也不值得优先优化。')
+const TABLE = {
+  date: {
+    rows: () => S.A.daily.filter(d => d.req || d.cost),
+    cols: [
+      { k: 'date', t: '日期', l: 1, f: v => `${v} <span class="dim wd">${weekday(v)}</span>` },
+      { k: 'cost', t: '费用', f: cny },
+      { k: 'share', t: '占比', opt: 1, f: (v, r) => `<span class="dim">${pct(S.A.total.cost ? r.cost / S.A.total.cost : 0)}</span>` },
+      { k: 'req', t: '请求', f: int },
+      { k: 'input', t: '输入', f: tk },
+      { k: 'out', t: '输出', opt: 1, f: tk },
+      { k: 'inputPerReq', t: '输入/请求', opt: 1, f: v => int(v) },
+      { k: 'hitRate', t: '命中率', f: (v, r) => r.input ? pill(v) : '—' }
+    ]
+  },
+  key: {
+    rows: () => S.A.byKey,
+    cols: [
+      { k: 'name', t: 'API Key', l: 1, f: v => esc(v) },
+      { k: 'cost', t: '费用', f: cny },
+      { k: 'share', t: '占比', opt: 1, f: (v, r) => `<span class="dim">${pct(S.A.total.cost ? r.cost / S.A.total.cost : 0)}</span>` },
+      { k: 'req', t: '请求', f: int },
+      { k: 'perReq', t: '每请求', f: v => cny(v) },
+      { k: 'inputPerReq', t: '输入/请求', opt: 1, f: int },
+      { k: 'out', t: '输出', opt: 1, f: tk },
+      { k: 'hitRate', t: '命中率', f: (v, r) => r.input ? pill(v) : '—' }
+    ]
+  },
+  model: {
+    rows: () => S.A.byModel,
+    cols: [
+      { k: 'name', t: '模型', l: 1, f: v => esc(v) },
+      { k: 'cost', t: '费用', f: cny },
+      { k: 'share', t: '占比', opt: 1, f: (v, r) => `<span class="dim">${pct(S.A.total.cost ? r.cost / S.A.total.cost : 0)}</span>` },
+      { k: 'req', t: '请求', f: int },
+      { k: 'perReq', t: '每请求', f: v => cny(v) },
+      { k: 'inputPerReq', t: '输入/请求', opt: 1, f: int },
+      { k: 'tokens', t: 'Token', opt: 1, f: tk },
+      { k: 'hitRate', t: '命中率', f: (v, r) => r.input ? pill(v) : '—' }
+    ]
+  },
+  type: {
+    rows: () => S.A.byType,
+    cols: [
+      { k: 'name', t: '计费项', l: 1, f: v => `${esc(typeLabel(v))} <span class="dim" style="font-size:11px">${esc(v)}</span>` },
+      { k: 'tokens', t: '用量', f: (v, r) => r.type === 'request_count' ? int(r.req) + ' 次' : tk(v) },
+      { k: 'priceMin', t: '单价 / 百万', f: (v, r) => r.priceMin === r.priceMax ? perM(v) : `<span class="dim">${perM(r.priceMin)}–${perM(r.priceMax)}</span>` },
+      { k: 'cost', t: '费用', f: cny },
+      { k: 'share', t: '占比', f: v => v ? pct(v) : '—' }
+    ]
+  }
+};
+
+function sortVal(r, k) {
+  if (k === 'name' || k === 'date') return String(r[k] || '');
+  if (k === 'share') return S.A.total.cost ? r.cost / S.A.total.cost : 0;
+  return Number(r[k] || 0);
+}
+
+function sortedRows() {
+  const conf = TABLE[S.dim], st = S.sort[S.dim];
+  let list = conf.rows().slice();
+  if (S.q) {
+    const q = S.q.toLowerCase();
+    list = list.filter(r => String(r.name || '').toLowerCase().includes(q));
+  }
+  list.sort((a, b) => {
+    const av = sortVal(a, st.k), bv = sortVal(b, st.k);
+    if (typeof av === 'string') return st.d * av.localeCompare(bv);
+    return st.d * (av - bv);
+  });
+  return list;
+}
+
+function renderTable() {
+  const dim = S.dim, conf = TABLE[dim], st = S.sort[dim];
+  const list = sortedRows();
+
+  const pages = Math.max(1, Math.ceil(list.length / S.pageSize));
+  if (S.page > pages) S.page = pages;
+  const start = (S.page - 1) * S.pageSize;
+  const view = list.slice(start, start + S.pageSize);
+
+  $('#tableSub').textContent = `${list.length} 行${S.q ? '（已搜索）' : ''} · ${S.A.range.first} 至 ${S.A.range.last}`;
+
+  let h = '<table><thead><tr>';
+  conf.cols.forEach(c => {
+    const on = st.k === c.k;
+    h += `<th data-k="${c.k}" class="${on ? 'on' : ''}${on && st.d === 1 ? ' asc' : ''}${c.opt ? ' opt' : ''}">${c.t}${on ? '<span class="ar"></span>' : ''}</th>`;
+  });
+  h += '</tr></thead><tbody>';
+  if (!view.length) {
+    h += `<tr><td colspan="${conf.cols.length}" class="skel" style="cursor:default">没有匹配的数据</td></tr>`;
+  }
+  view.forEach(r => {
+    const id = dim === 'date' ? r.date : (r.name || '');
+    h += `<tr data-id="${esc(id)}" class="${(dim === 'date' ? S.selDate === id : false) ? 'sel' : ''}">`;
+    conf.cols.forEach(c => {
+      h += `<td class="${c.opt ? 'opt' : ''}">${c.f(sortVal(r, c.k), r)}</td>`;
     });
-
-    const miss = d.types.find(x => x.type === 'input_cache_miss_tokens');
-    if (miss && miss.cost > d.costTotal * 0.2 && miss.priceMin) {
-      const floor = miss.amount * miss.priceMin;
-      out.push({
-        l: 'warn', h: '未命中输入的优化空间',
-        x: `${tk(miss.amount)} tokens 花了 ${cny(miss.cost)} 元；若全部命中缓存只需约 ${cny(floor)} 元，理论上限可省 ${cny(miss.cost - floor)} 元（占总费用 ${pct((miss.cost - floor) / (d.costTotal || 1))}）。`
-      });
+    h += '</tr>';
+  });
+  h += '</tbody>';
+  const t = S.A.total;
+  const footVal = k => {
+    switch (k) {
+      case 'date': case 'name': return '合计';
+      case 'cost': return cny(t.cost);
+      case 'share': return '100%';
+      case 'req': return int(t.req);
+      case 'input': return tk(t.input);
+      case 'out': return tk(t.out);
+      case 'tokens': return tk(t.tokens);
+      case 'inputPerReq': return int(t.input / (t.req || 1));
+      case 'perReq': return cny(t.perReq);
+      case 'hitRate': return pill(t.hitRate);
+      default: return '';
     }
+  };
+  h += '<tfoot><tr>' + conf.cols.map(c => `<td class="${c.opt ? 'opt' : ''}">${footVal(c.k)}</td>`).join('') + '</tr></tfoot>';
+  h += '</table>';
+  $('#tableWrap').innerHTML = h;
 
-    const outT = d.types.find(x => x.type === 'output_tokens');
-    if (outT && t.req && t.input) {
-      const ratio = outT.amount / t.input;
-      out.push({
-        l: 'info', h: `平均每请求 输入 ${int(t.input / t.req)} · 输出 ${int(outT.amount / t.req)}`,
-        x: `平均每请求输入 ${int(t.input / t.req)} tokens、输出 ${int(outT.amount / t.req)} tokens，输出/输入 ${pct(ratio)}。` +
-          (ratio < 0.02 ? '典型的长上下文 Agent 编码模式：大量代码塞入 prompt，回复很短。' : '输出占比较高，注意是否存在冗长回复。')
-      });
+  /* 分页 */
+  const pager = $('#pager');
+  if (pages <= 1) {
+    pager.innerHTML = `<span>共 ${list.length} 行</span>`;
+  } else {
+    const nums = [];
+    for (let i = 1; i <= pages; i++) {
+      if (i === 1 || i === pages || Math.abs(i - S.page) <= 1) nums.push(i);
+      else if (nums[nums.length - 1] !== '…') nums.push('…');
+    }
+    pager.innerHTML = `<span>第 ${start + 1}–${Math.min(start + S.pageSize, list.length)} 项，共 ${list.length} 行</span>
+      <div class="pgs">
+        <button data-pg="${S.page - 1}" ${S.page === 1 ? 'disabled' : ''}>上一页</button>
+        ${nums.map(n => n === '…' ? '<button disabled>…</button>' : `<button data-pg="${n}" class="${n === S.page ? 'on' : ''}">${n}</button>`).join('')}
+        <button data-pg="${S.page + 1}" ${S.page === pages ? 'disabled' : ''}>下一页</button>
+      </div>`;
+  }
+}
+
+/* ============================================================
+   抽屉
+   ============================================================ */
+function openDrawer(title, sub, body) {
+  const d = $('#drawer');
+  d.innerHTML = `<div class="dr-head"><div><h3>${title}</h3><p>${sub || ''}</p></div>
+    <button class="dr-close" data-close title="关闭">✕</button></div>
+    <div class="dr-body">${body}</div>`;
+  d.classList.add('on');
+  $('#scrim').classList.add('on');
+}
+function closeDrawer() {
+  $('#drawer').classList.remove('on');
+  $('#scrim').classList.remove('on');
+}
+
+function groupRows(rows, keyFn) {
+  const mp = new Map();
+  rows.forEach(r => {
+    const k = keyFn(r);
+    if (!mp.has(k)) mp.set(k, mkBucket());
+    const amt = N(r.amount), price = N(r.price);
+    addTo(mp.get(k), r.type || '', amt, price, price * amt);
+  });
+  return [...mp.entries()].map(([k, B]) => shape(B, k)).sort((a, b) => b.cost - a.cost);
+}
+
+function barList(items, max, colorFn, total) {
+  const list = items.filter(it => it.cost > 0);
+  if (!list.length) return '<div class="skel">无数据</div>';
+  return list.slice(0, 8).map((it, i) => `
+    <div style="margin-bottom:9px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;gap:10px">
+        <span style="color:#c9d6e4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(it.name)}</span>
+        <span class="num" style="color:#e8eef6;font-weight:600;white-space:nowrap">${cny(it.cost)} <span class="dim">${pct(total ? it.cost / total : 0)}</span></span>
+      </div>
+      <div style="height:5px;background:#1a2431;border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${(max ? it.cost / max * 100 : 0).toFixed(1)}%;background:${colorFn(it, i)};border-radius:3px"></div>
+      </div>
+    </div>`).join('');
+}
+
+const arrow = (cur, prev) => {
+  if (!prev) return '—';
+  const d = (cur - prev) / prev;
+  return (d >= 0 ? '<span class="pos">↑ ' : '<span class="neg">↓ ') + pct(Math.abs(d)) + '</span>';
+};
+
+function openDayDrawer(date) {
+  S.selDate = date;
+  const rows = S.raw.amount.filter(r => DAY(r.start_time_iso) === date && passFilters(r, false));
+  const byKey = groupRows(rows, r => r.api_key_name || r.api_key || '（未命名）');
+  const byType = groupRows(rows, r => r.type || '')
+    .map(x => ({ ...x, type: x.name, name: typeLabel(x.name) }));
+  const dRow = S.A.daily.find(x => x.date === date);
+  const prev = S.A.daily.find(x => x.date === shiftDay(date, -1));
+  const dayCost = byKey.reduce((s, x) => s + x.cost, 0);
+  const maxK = byKey.length ? byKey[0].cost : 0;
+  const maxT = byType.length ? byType[0].cost : 0;
+
+  const body = `
+    <div class="dr-kpis">
+      <div><div class="k">费用</div><div class="v">${cny(dRow ? dRow.cost : 0)}</div></div>
+      <div><div class="k">请求</div><div class="v">${int(dRow ? dRow.req : 0)}</div></div>
+      <div><div class="k">输入 token</div><div class="v">${tk(dRow ? dRow.input : 0)}</div></div>
+      <div><div class="k">输出 token</div><div class="v">${tk(dRow ? dRow.out : 0)}</div></div>
+      <div><div class="k">命中率</div><div class="v">${dRow && dRow.input ? pct(dRow.hitRate) : '—'}</div></div>
+      <div><div class="k">每请求</div><div class="v">${cny(dRow ? dRow.perReq : 0)}</div></div>
+    </div>
+    ${prev && dRow ? `<div class="ins info" style="margin-bottom:4px"><b>较前一天：</b>费用 ${arrow(dRow.cost, prev.cost)}，请求 ${arrow(dRow.req, prev.req)}</div>` : ''}
+    <div class="dr-sec">API Key 分布</div>${barList(byKey, maxK, () => '#5b9dff', dayCost)}
+    <div class="dr-sec">计费项分布</div>${barList(byType, maxT, it => typeColor(it.type), dayCost)}
+    <div class="dr-sec">只分析这一天？</div>
+    <button class="btn primary" data-only="${date}" style="width:100%;justify-content:center">筛定为 ${date}</button>`;
+
+  openDrawer(`${date} <span style="font-weight:400;color:#93a3b6;font-size:13px">${weekday(date)}</span>`,
+    `当天 ${int(dRow ? dRow.req : 0)} 次请求 · ${rows.length ? rows.length : 0} 条计费记录`, body);
+  renderTrend();
+}
+
+function openEntityDrawer(dim, name) {
+  const rows = S.raw.amount.filter(r => passFilters(r, false) &&
+    (dim === 'key' ? (r.api_key_name || r.api_key || '（未命名）') === name
+      : dim === 'model' ? (r.model || '（未知模型）') === name
+        : (r.type || '') === name));
+  const byType = groupRows(rows, r => r.type || '')
+    .map(x => ({ ...x, type: x.name, name: typeLabel(x.name) }));
+  const byDay = groupRows(rows, r => DAY(r.start_time_iso)).sort((a, b) => a.name.localeCompare(b.name));
+  const sum = rows.reduce((B, r) => { addTo(B, r.type || '', N(r.amount), N(r.price), N(r.amount) * N(r.price)); return B; }, mkBucket());
+  const s = shape(sum, name);
+  const maxD = Math.max(...byDay.map(x => x.cost), 0.000001);
+  const W = 460, H = 96, bw = Math.min(34, (W - 8) / Math.max(byDay.length, 1) * 0.6);
+  const step = (W - 8) / Math.max(byDay.length, 1);
+  const bars = byDay.map((x, i) => {
+    const hh = x.cost / maxD * (H - 22);
+    return `<rect x="${(4 + step * i + (step - bw) / 2).toFixed(1)}" y="${(H - 18 - hh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0.5, hh).toFixed(1)}" rx="2" fill="#5b9dff" opacity=".8"><title>${x.name} ${cny(x.cost)}</title></rect>
+      <text x="${(4 + step * i + step / 2).toFixed(1)}" y="${H - 4}" text-anchor="middle" class="axis" style="font-size:9px">${x.name.slice(5)}</text>`;
+  }).join('');
+
+  const label = dim === 'key' ? 'API Key' : dim === 'model' ? '模型' : '计费项';
+  const title = dim === 'type' ? typeLabel(name) : esc(name);
+  const body = `
+    <div class="dr-kpis">
+      <div><div class="k">费用</div><div class="v">${cny(s.cost)}</div></div>
+      <div><div class="k">占比</div><div class="v">${pct(S.A.total.cost ? s.cost / S.A.total.cost : 0)}</div></div>
+      <div><div class="k">请求</div><div class="v">${int(s.req)}</div></div>
+      <div><div class="k">每请求</div><div class="v">${cny(s.perReq)}</div></div>
+      <div><div class="k">输入 token</div><div class="v">${tk(s.input)}</div></div>
+      <div><div class="k">命中率</div><div class="v">${s.input ? pct(s.hitRate) : '—'}</div></div>
+    </div>
+    <div class="dr-sec">每日费用</div>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${bars}</svg>
+    <div class="dr-sec">计费项构成</div>${barList(byType, byType.length ? byType[0].cost : 0, it => typeColor(it.type), s.cost)}
+    <div class="dr-sec">只看 ${title}？</div>
+    <button class="btn primary" data-only-entity="${esc(name)}" data-dim2="${dim}" style="width:100%;justify-content:center">筛定为 ${title}</button>`;
+
+  openDrawer(title, `${label} · ${rows.length} 条记录 · 涵盖 ${byDay.length} 天`, body);
+}
+
+/* ============================================================
+   关键发现
+   ============================================================ */
+function renderInsights() {
+  const A = S.A, t = A.total, out = [];
+  const add = (l, tag, h, x) => out.push({ l, tag, h, x });
+  const unit = S.currency;
+
+  if (!A.hasAmount) {
+    add('info', '说明', '只读到了费用汇总',
+      `当前只有 cost 表，能看费用走势与占比，但看不到 token 明细与 Key 维度。把同一批导出的 amount csv 一并拖进来即可解锁完整分析。`);
+  }
+
+  /* 1. 费用集中度 */
+  if (A.byKey.length > 1 && t.cost > 0) {
+    const top = A.byKey[0];
+    const share = top.cost / t.cost;
+    add(share > 0.75 ? 'warn' : 'info', '集中度',
+      `${esc(top.name)} 占 ${pct(share)} 费用`,
+      share > 0.75
+        ? `单一 Key 承担了 ${pct(share)} 的开销（${cny(top.cost)} ${unit}），一旦滥用或泄露影响面最大。建议为它设配额或拆分成多个子 Key。`
+        : `前三大 Key 合计 ${pct(A.byKey.slice(0, 3).reduce((s, k) => s + k.cost, 0) / t.cost)}，分布比较均匀。`);
+  }
+
+  /* 2. 缓存经济性 */
+  const hitT = A.byType.find(x => x.type === 'input_cache_hit_tokens');
+  const missT = A.byType.find(x => x.type === 'input_cache_miss_tokens');
+  if (hitT && missT && t.input > 0) {
+    const hp = hitT.tokens ? hitT.cost / hitT.tokens : 0;
+    const mp = missT.tokens ? missT.cost / missT.tokens : 0;
+    if (mp > hp && hp > 0) {
+      const target = 0.985;
+      const cur = t.hitRate;
+      const missShare = t.cost ? missT.cost / t.cost : 0;
+      const saved = cur < target ? ((1 - target) * t.input - t.miss) / 1e6 * (mp - hp) * 1e6 : 0;
+      add(missShare > 0.2 ? 'warn' : 'good', '缓存',
+        `命中率 ${pct(cur)}，但未命中吃掉了 ${pct(missShare)} 的费用`,
+        `未命中 token 只占输入的 ${pct(1 - cur, 2)}，单价却是命中的 <b>${(mp / hp).toFixed(1)} 倍</b>，于是一共花了 <b>${cny(missT.cost)} ${unit}</b>。` +
+        (saved > 0
+          ? `若提升到 98.5% 命中率，相同请求量可省约 <b>${cny(saved)} ${unit}</b>。手段：固定 system prompt 前缀、把稳定上下文放在请求最前面、避免会话变长后前缀失效。`
+          : `把 prompt 前缀固定住，就能把剩下这部分成本也压下去。`));
     }
   }
 
-  if (d.daily.length) {
-    const peak = d.daily.slice().sort((a, b) => b.cost - a.cost)[0];
-    out.push({
-      l: 'info', h: `峰值日 ${peak.date}（${weekday(peak.date)}）`,
-      x: `花费 ${cny(peak.cost)} 元，占周期 ${pct(peak.cost / (d.costTotal || 1))}，请求 ${int(peak.req)} 次，单请求输入 ${peak.req ? int(peak.input / peak.req) : 0} tokens。`
-    });
-    const costs = d.daily.map(x => x.cost);
-    const mean = costs.reduce((a, b) => a + b, 0) / costs.length;
-    const sd = Math.sqrt(costs.reduce((a, b) => a + (b - mean) * (b - mean), 0) / costs.length);
-    if (mean > 0) {
-      const cv = sd / mean;
-      out.push({
-        l: cv > 0.6 ? 'warn' : 'info', h: `日均 ${cny(mean)}，波动系数 ${cv.toFixed(2)}`,
-        x: `最高 ${cny(Math.max.apply(null, costs))} 元、最低 ${cny(Math.min.apply(null, costs))} 元。` +
-          (cv > 0.6 ? '日间波动很大，预算按峰值而不是均值来估更稳妥。' : '日间支出比较平稳，便于按月估算预算。')
-      });
+  /* 3. 输出占比 */
+  const outT = A.byType.find(x => x.type === 'output_tokens');
+  if (outT && t.cost > 0) {
+    const share = outT.cost / t.cost;
+    if (share > 0.25) {
+      add('info', '输出', `输出 token 花费占 ${pct(share)}`,
+        `输出共 ${tk(outT.tokens)} tokens、花费 ${cny(outT.cost)} ${unit}，而它只占输入 token 量的 ${pct(outT.tokens / (t.input || 1), 2)}。输出单价通常是输入的数倍，减少冗长回复、限制 max_tokens 是性价比最高的优化点。`);
     }
   }
 
-  if (d.byKey.length > 1 && t.input) {
-    const overall = t.hitRate;
-    const bad = d.byKey.filter(k => k.cost > d.costTotal * 0.01 && k.input && k.hitRate < overall - 0.2);
-    if (bad.length) {
-      out.push({
-        l: 'warn', h: `${bad.length} 个 Key 缓存效率明显偏低`,
-        x: bad.map(k => `「${esc(k.name)}」命中率 ${pct(k.hitRate)}、每请求 ${cny(k.perReq)} 元（整体 ${pct(overall)} / ${cny(d.perReq)} 元）`).join('；') + '。建议逐个检查其 prompt 构造方式。'
-      });
+  /* 4. 峰值日 */
+  if (A.daily.length > 1 && t.cost > 0) {
+    const peak = A.daily.reduce((a, b) => b.cost > a.cost ? b : a, A.daily[0]);
+    const avg = t.cost / A.range.days;
+    if (peak.cost > avg * 1.3) {
+      add('warn', '峰值', `${peak.date} 费用是日均的 ${(peak.cost / avg).toFixed(1)} 倍`,
+        `当天花了 ${cny(peak.cost)} ${unit}，比日均 ${cny(avg)} 高 ${cny(peak.cost - avg)}。如果那天没有预期中的批量任务，值得查一下是不是重试循环或脚本漏了限流。`);
     }
-    const top = d.byKey[0];
-    out.push({
-      l: 'info', h: `主力 Key「${esc(top.name)}」`,
-      x: `承担 ${pct(top.cost / (d.costTotal || 1))} 的费用、${pct(top.req / (t.req || 1))} 的请求，平均每请求输入 ${int(top.inputPerReq)} tokens，命中率 ${pct(top.hitRate)}。`
-    });
   }
 
-  if (d.multiTier.length) {
-    const total = d.multiTier.reduce((s, m) => s + m.highCost, 0);
+  /* 5. 输入长度 */
+  if (t.req > 0) {
+    const ipr = t.input / t.req;
+    if (ipr > 15000) {
+      add('info', '上下文', `平均每次请求带 ${int(ipr)} 个输入 token`,
+        `上下文偏长，说明每次都在重复上传大段背景材料。若这部分能被缓存命中就不算浪费，否则优先做 prompt 精简或 RAG 切片。`);
+    }
+  }
+
+  /* 6. 多档单价 */
+  if (A.multiTier.length) {
     const byModel = {};
-    d.multiTier.forEach(m => {
-      if (!byModel[m.model]) byModel[m.model] = { ratios: new Set(), items: [] };
-      byModel[m.model].ratios.add(m.ratio.toFixed(1));
-      byModel[m.model].items.push(typeLabel(m.type));
+    A.multiTier.forEach(d => {
+      (byModel[d.model] = byModel[d.model] || { items: [], ratios: [] });
+      byModel[d.model].items.push(typeLabel(d.type));
+      byModel[d.model].ratios.push(d.ratio.toFixed(1));
     });
     const desc = Object.keys(byModel).map(k =>
-      `${k} 的 ${byModel[k].items.join('/')}（相差 ${[...byModel[k].ratios].join('、')} 倍）`).join('；');
-    out.push({
-      l: 'warn', h: `${d.multiTier.length} 组计费项存在多档单价`,
-      x: `${desc}。同一份用量被计了不同价格，按高价档结算的部分约 ${cny(total)} 元；若非业务必需，可确认能否把批量任务调度到低价档。`
-    });
+      `${k} 的 ${byModel[k].items.join('/')}（差 ${[...new Set(byModel[k].ratios)].join('、')} 倍）`).join('；');
+    const highCost = A.multiTier.reduce((s, d) => s + d.highCost, 0);
+    add('warn', '计价', `${A.multiTier.length} 组计费项存在多档单价`,
+      `${desc}。按高价档结算的部分共 <b>${cny(highCost)} ${unit}</b>，占总费用 ${pct(t.cost ? highCost / t.cost : 0)}。若非业务必需，可确认能否把批量任务调度到低价时段。`);
   }
-  return out;
-}
 
-function renderInsights(d) {
-  const items = buildInsights(d);
-  $('#insights').innerHTML = items.map(i =>
-    `<li class="${i.l}"><b>${i.h}</b> — ${i.x}</li>`).join('') || '<li>数据量太少，暂无结论。</li>';
-}
-
-function render(d) {
-  renderMeta(d);
-  renderCards(d);
-  drawDaily($('#chartDaily'), d.daily);
-  renderDailyTable(d);
-  renderStruct(d);
-  renderKeys(d);
-  renderModels(d);
-  renderPrice(d);
-  renderInsights(d);
-
-  const notes = [];
-  if (d.mismatch !== null && d.mismatch > 0.01) {
-    notes.push(`明细折算费用 ${cny(d.calcTotal)} 与汇总费用 ${cny(d.costTotal)} 相差 ${cny(d.mismatch)}，报告以汇总表为准。`);
-  }
-  if (!d.hasAmount) notes.push('只识别到费用汇总文件，token 与缓存相关分析已跳过。');
-  $('#notice').innerHTML = notes.length ? `<div class="notice">${notes.join('<br>')}</div>` : '';
-
-  const t = d.total;
-  $('#foot').textContent = `共 ${int(d.amountRowsCount || 0)} 行明细 · 生成于 ${new Date().toLocaleString('zh-CN')}`;
-  if (window.__rowCount) $('#foot').textContent = `共 ${int(window.__rowCount)} 行明细 · 生成于 ${new Date().toLocaleString('zh-CN')}`;
-}
-
-/* ============================ Markdown 导出 ============================ */
-function toMarkdown(d) {
-  const t = d.total;
-  const L = [];
-  L.push(`# AI 用量账单分析（${d.first} ~ ${d.last}）`, '');
-  L.push(`- 总费用：**${cny(t.cost)} ${d.currency}**，日均 ${cny(t.cost / (d.dates.length || 1))}`);
-  L.push(`- 请求数：${int(t.req)} 次，每请求 ${cny(d.perReq)}`);
-  if (d.hasAmount) {
-    L.push(`- token：输入 ${tk(t.input)} / 输出 ${tk(t.out)}，缓存命中率 ${pct(t.hitRate)}`);
-    L.push(`- 有效单价：${cny(d.costTotal / t.tokens * 1e6)} 元 / 百万 token`);
-  }
-  L.push('', '## 每日明细', '', '| 日期 | 星期 | 费用 | 请求 | 输入 | 未命中 | 输出 | 命中率 |', '|---|---|---|---|---|---|---|---|');
-  d.daily.forEach(x => L.push(`| ${x.date} | ${weekday(x.date)} | ${cny(x.cost)} | ${int(x.req)} | ${tk(x.input)} | ${tk(x.miss)} | ${tk(x.out)} | ${x.input ? pct(x.hitRate) : '—'} |`));
-  L.push(`| **合计** | | **${cny(t.cost)}** | ${int(t.req)} | ${tk(t.input)} | ${tk(t.miss)} | ${tk(t.out)} | ${t.input ? pct(t.hitRate) : '—'} |`);
-  if (d.types.length) {
-    L.push('', '## 成本结构', '', '| 计费项 | token | 费用 | 费用占比 |', '|---|---|---|---|');
-    d.types.forEach(x => L.push(`| ${typeLabel(x.type)} | ${tk(x.amount)} | ${cny(x.cost)} | ${pct(x.costShare)} |`));
-  }
-  if (d.byKey.length) {
-    L.push('', '## API Key', '', '| Key | 费用 | 占比 | 请求 | 每请求 | 输入/请求 | 命中率 |', '|---|---|---|---|---|---|---|');
-    d.byKey.forEach(k => L.push(`| ${k.name} | ${cny(k.cost)} | ${pct(d.costTotal ? k.cost / d.costTotal : 0)} | ${int(k.req)} | ${cny(k.perReq)} | ${int(k.inputPerReq)} | ${k.hit ? pct(k.hitRate) : '—'} |`));
-  }
-  L.push('', '## 关键发现', '');
-  buildInsights(d).forEach(i => L.push(`- **${i.h}** — ${i.x.replace(/<[^>]+>/g, '')}`));
-  return L.join('\n');
-}
-
-async function copyMd() {
-  if (!DATA) return;
-  const md = toMarkdown(DATA);
-  try {
-    await navigator.clipboard.writeText(md);
-    flash($('#btnMd'), '已复制');
-  } catch (e) {
-    const ta = document.createElement('textarea');
-    ta.value = md; ta.style.position = 'fixed'; ta.style.opacity = '0';
-    document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); flash($('#btnMd'), '已复制'); }
-    catch (e2) { alert('复制失败，请手动选择报告内容。'); }
-    document.body.removeChild(ta);
-  }
-}
-function flash(btn, text) {
-  const old = btn.textContent;
-  btn.textContent = text;
-  setTimeout(() => { btn.textContent = old; }, 1500);
-}
-
-/* ============================ 主流程 ============================ */
-function setCompact(names) {
-  const dz = $('#dropzone');
-  dz.classList.add('compact');
-  const f = $('#dzFile');
-  f.hidden = false;
-  f.textContent = names.join(' · ');
-  $('#btnNew').hidden = false;
-}
-
-function resetUI() {
-  DATA = null; FILE_NAMES = []; window.__rowCount = 0;
-  $('#report').hidden = true;
-  $('#dropzone').classList.remove('compact');
-  $('#dzFile').hidden = true;
-  $('#btnNew').hidden = true;
-  $('#btnMd').hidden = true;
-  $('#fileInput').value = '';
-  $('#notice').innerHTML = '';
-}
-
-async function run(fileList) {
-  const files = [].slice.call(fileList || []).filter(Boolean);
-  if (!files.length) return;
-  $('#notice').innerHTML = '';
-  $('#report').hidden = false;
-  try {
-    const { cost, amount, names } = await collect(files);
-    if (!cost.length && !amount.length) {
-      throw new Error('没有识别到有效数据：请拖入 usage_data 的 zip，或包含 cost / amount 列的 csv。');
+  /* 7. 突变检测（排除小额的冷启动）*/
+  if (A.daily.length >= 3) {
+    const avg = t.cost / A.range.days;
+    const jumps = [];
+    for (let i = 1; i < A.daily.length; i++) {
+      const a = A.daily[i - 1].cost, b = A.daily[i].cost;
+      if (a > 0 && b > a * 2 && b > avg) jumps.push(`${A.daily[i].date}（${cny(a)} → ${cny(b)}）`);
     }
-    FILE_NAMES = names;
-    const d = analyze(cost, amount);
-    d.amountRowsCount = amount.length;
-    window.__rowCount = amount.length + cost.length;
-    DATA = d;
-    setCompact(names);
-    $('#btnMd').hidden = false;
-    render(d);
-  } catch (err) {
-    $('#report').hidden = true;
-    $('#notice').innerHTML = `<div class="notice err">解析失败：${esc(err.message || err)}</div>`;
-    $('#dropzone').classList.remove('compact');
+    if (jumps.length) {
+      add('bad', '异常', `${jumps.length} 天费用环比翻倍`,
+        `${jumps.slice(0, 3).join('；')}${jumps.length > 3 ? ` 等 ${jumps.length} 天` : ''}。环比翻倍通常来自批量回填、循环重试或新上线的功能，建议对照发布记录。`);
+    }
+  }
+
+  /* 8. 数据校验 */
+  if (A.hasAmount && S.raw.cost.length && !S.f.keys.size && !S.f.types.size) {
+    const costSum = S.raw.cost.reduce((s, r) => passFilters(r, true) ? s + N(r.cost) : s, 0);
+    if (costSum > 0) {
+      const diff = Math.abs(A.calcTotal - costSum) / costSum;
+      add('good', '校验', diff < 0.001 ? '明细折算与账单总额一致' : `明细折算与账单差 ${pct(diff, 2)}`,
+        `逐行 price×amount 合计 ${cny(A.calcTotal)}，账单 cost 表合计 ${cny(costSum)}。` +
+        (diff < 0.001 ? '两边完全对得上，下面的拆分可直接当账用。' : '存在小幅差异，可能是四舍五入或未计入的项。'));
+    }
+  }
+
+  $('#insights').innerHTML = out.length
+    ? out.slice(0, S.insOpen ? out.length : 4).map(i => `<div class="ins ${i.l}"><span class="tag">${i.tag}</span><b>${i.h}</b><br>${i.x}</div>`).join('')
+      + (out.length > 4 ? `<button class="ins-more" data-ins>${S.insOpen ? '收起' : `展开全部 ${out.length} 条`}</button>` : '')
+    : '<div class="skel">当前筛选下没有可分析的结论</div>';
+  S.insList = out;
+}
+
+/* ============================================================
+   计费档位
+   ============================================================ */
+function renderPrice() {
+  const host = $('#priceBox');
+  const tiers = S.A.tiers;
+  if (!tiers.length) {
+    host.innerHTML = '<div class="skel">当前筛选下没有计费明细</div>';
+    return;
+  }
+  const multiSet = new Set(S.A.multiTier.map(d => d.model + '|' + d.type));
+  let h = `<div class="tbl-wrap"><table><thead><tr>
+    <th class="no-sort">模型</th><th class="no-sort">计费项</th><th class="no-sort">单价 / 百万</th>
+    <th class="no-sort">用量</th><th class="no-sort">费用</th><th class="no-sort">状态</th></tr></thead><tbody>`;
+  tiers.forEach(t => {
+    const isMulti = multiSet.has(t.model + '|' + t.type);
+    h += `<tr style="cursor:default"><td>${esc(t.model)}</td><td>${esc(typeLabel(t.type))}</td>
+      <td>${perM(t.price)}</td><td>${tk(t.amount)}</td><td>${cny(t.cost)}</td>
+      <td>${isMulti ? '<span class="pill mid">多档</span>' : ''}</td></tr>`;
+  });
+  h += '</tbody></table></div>';
+  host.innerHTML = h;
+}
+
+/* ============================================================
+   导出
+   ============================================================ */
+function download(name, text, type) {
+  const blob = new Blob([text], { type: type || 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+function exportCSV() {
+  const conf = TABLE[S.dim];
+  const esc2 = v => {
+    const s = String(v ?? '');
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const lines = [conf.cols.map(c => esc2(c.t)).join(',')];
+  sortedRows().forEach(r => {
+    const row = conf.cols.map(c => {
+      if (c.k === 'share') return S.A.total.cost ? (r.cost / S.A.total.cost).toFixed(4) : '0';
+      if (c.k === 'hitRate') return r.input ? r.hitRate.toFixed(4) : '';
+      return esc2(sortVal(r, c.k));
+    });
+    lines.push(row.join(','));
+  });
+  download(`usage-${S.dim}-${S.A.range.first}_${S.A.range.last}.csv`, '\uFEFF' + lines.join('\n'), 'text/csv;charset=utf-8');
+  toast(`已导出 ${S.dim === 'date' ? '日期' : S.dim === 'key' ? 'Key' : S.dim === 'model' ? '模型' : '计费项'}明细 ${lines.length - 1} 行`);
+}
+
+function exportMD() {
+  const A = S.A, t = A.total, n = A.range.days || 1, u = S.currency;
+  const L = [];
+  L.push(`# 用量账单分析报告`, '');
+  L.push(`- 区间：${A.range.first} ~ ${A.range.last}（${n} 天）`);
+  L.push(`- 筛选：${S.f.models.size ? '模型 ' + [...S.f.models].join('/') : '全部模型'}；${S.f.keys.size ? 'Key ' + [...S.f.keys].join('/') : '全部 Key'}`);
+  L.push('', '## 总览', '', '| 指标 | 数值 |', '| --- | --- |');
+  L.push(`| 总费用 | ${cny(t.cost)} ${u} |`);
+  L.push(`| 日均费用 | ${cny(t.cost / n)} ${u} |`);
+  L.push(`| 请求数 | ${int(t.req)}（日均 ${int(t.req / n)}）|`);
+  if (A.hasAmount) {
+    L.push(`| 总 token | ${tk(t.tokens)} |`);
+    L.push(`| 输入 / 输出 | ${tk(t.input)} / ${tk(t.out)} |`);
+    L.push(`| 缓存命中率 | ${pct(t.hitRate)} |`);
+    L.push(`| 每请求成本 | ${cny(t.perReq)} ${u} |`);
+  }
+  L.push('', '## 按模型', '', '| 模型 | 费用 | 占比 | 请求 | Token | 命中率 |', '| --- | ---: | ---: | ---: | ---: | ---: |');
+  A.byModel.forEach(m => L.push(`| ${m.name} | ${cny(m.cost)} | ${pct(t.cost ? m.cost / t.cost : 0)} | ${int(m.req)} | ${tk(m.tokens)} | ${pct(m.hitRate)} |`));
+  if (A.byKey.length) {
+    L.push('', '## 按 API Key', '', '| Key | 费用 | 占比 | 请求 | 每请求 | 命中率 |', '| --- | ---: | ---: | ---: | ---: | ---: |');
+    A.byKey.forEach(k => L.push(`| ${k.name} | ${cny(k.cost)} | ${pct(t.cost ? k.cost / t.cost : 0)} | ${int(k.req)} | ${cny(k.perReq)} | ${pct(k.hitRate)} |`));
+  }
+  L.push('', '## 按计费项', '', '| 计费项 | 用量 | 单价/百万 | 费用 | 占比 |', '| --- | ---: | ---: | ---: | ---: |');
+  A.byType.forEach(x => L.push(`| ${typeLabel(x.type)} | ${tk(x.tokens)} | ${x.priceMin === x.priceMax ? perM(x.priceMin) : perM(x.priceMin) + '–' + perM(x.priceMax)} | ${cny(x.cost)} | ${pct(x.share)} |`));
+  L.push('', '## 每日明细', '', '| 日期 | 星期 | 费用 | 请求 | 输入 | 输出 | 命中率 |', '| --- | --- | ---: | ---: | ---: | ---: | ---: |');
+  A.daily.filter(d => d.req || d.cost).forEach(d => L.push(`| ${d.date} | ${weekday(d.date)} | ${cny(d.cost)} | ${int(d.req)} | ${tk(d.input)} | ${tk(d.out)} | ${d.input ? pct(d.hitRate) : '—'} |`));
+  L.push('', '## 关键发现', '');
+  (S.insList || []).forEach(i => L.push(`- **[${i.tag}] ${i.h}** ${stripTags(i.x).trim()}`));
+  L.push('', `> 由本地分析工具生成，数据未上传。`);
+  download(`usage-report-${A.range.first}_${A.range.last}.md`, L.join('\n'), 'text/markdown;charset=utf-8');
+  toast('Markdown 已导出');
+}
+
+/*__JS_PART6__*/
+
+/* ============================================================
+   刷新调度
+   ============================================================ */
+S.currency = 'CNY';
+S.preset = 'all';
+S.bounds = null;
+S.options = { models: [], keys: [], users: [] };
+S.openMulti = null;
+S.prev = null;
+S.insOpen = false;
+
+function updateSub() {
+  if (!S.A) return;
+  const rows = S.raw.amount.length + S.raw.cost.length;
+  const n = S.A.range.days;
+  const filtered = S.f.from || S.f.to || S.f.models.size || S.f.keys.size || S.f.types.size || S.f.users.size;
+  $('#subtitle').textContent = `${rows} 行数据 · ${S.A.range.first} 至 ${S.A.range.last} · ${filtered ? '已筛选' : '共'} ${n} 天`;
+}
+
+function refresh() {
+  S.A = compute();
+  S.prev = S.compare ? prevPeriodTotal() : null;
+  updateSub();
+  renderKPI();
+  renderTrend();
+  renderStruct();
+  renderInsights();
+  renderTable();
+  renderPrice();
+}
+
+function renderAll() {
+  ['#toolbar', '#filterbar', '#kpi', '#trendPanel', '#structPanel', '#insightPanel', '#tablePanel', '#pricePanel']
+    .forEach(s => { $(s).hidden = false; });
+  $('#drop').hidden = true;
+  refresh();
+  renderFilters();
+  $('#foot').innerHTML = `数据全程在本地解析 · 刷新页面后需重新导入<br>${esc(S.raw.names.slice(0, 6).join(' · '))}${S.raw.names.length > 6 ? ' 等' : ''}`;
+}
+
+function toggleFilter(name, v) {
+  const set = S.f[name];
+  if (!set) return;
+  if (set.has(v)) set.delete(v); else set.add(v);
+  S.page = 1;
+  refresh();
+  renderFilters();
+}
+
+function resetFilters() {
+  S.f = { from: '', to: '', models: new Set(), keys: new Set(), users: new Set(), types: new Set() };
+  S.preset = 'all';
+  S.page = 1;
+  S.q = '';
+  S.dim = 'date';
+  S.metric = 'cost';
+  S.selDate = null;
+  S.openMulti = null;
+  const se = $('#search'); if (se) se.value = '';
+  $$('#dimSeg button').forEach((b, i) => b.classList.toggle('on', i === 0));
+  $$('#metricSeg button').forEach((b, i) => b.classList.toggle('on', i === 0));
+}
+
+/* ============================================================
+   加载
+   ============================================================ */
+async function loadFiles(files) {
+  const notice = $('#notice');
+  notice.innerHTML = '';
+  try {
+    const res = await collect(files);
+    if (!res.amount.length && !res.cost.length) {
+      throw new Error('没识别到 length/cost 明细，请确认导出的是用量账单 zip（含 cost 与 amount 两个 csv）');
+    }
+    S.raw = res;
+    const ds = [...res.amount, ...res.cost].map(r => DAY(r.start_time_iso)).filter(Boolean).sort();
+    if (!ds.length) throw new Error('数据里没有有效日期，无法分析');
+    S.bounds = { first: ds[0], last: ds[ds.length - 1], days: daysBetween(ds[0], ds[ds.length - 1]) };
+    S.currency = (res.cost[0] && res.cost[0].currency) || 'CNY';
+    const uniq = a => [...new Set(a.filter(Boolean))].sort();
+    S.options = {
+      models: uniq([...res.amount.map(r => r.model), ...res.cost.map(r => r.model)]),
+      keys: uniq(res.amount.map(r => r.api_key_name || r.api_key)),
+      users: uniq([...res.amount, ...res.cost].map(r => r.user_id))
+    };
+    resetFilters();
+    renderAll();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!res.cost.length) {
+      notice.innerHTML = '<div class="notice">只读到了 amount 明细（无 cost 汇总表），费用由 price×amount 逐行重算。金额应与账单一致。</div>';
+    }
+  } catch (e) {
+    notice.innerHTML = `<div class="notice err">${esc(e && e.message ? e.message : e)}</div>`;
   }
 }
 
-/* ============================ 事件绑定 ============================ */
-(function init() {
-  const dz = $('#dropzone'), input = $('#fileInput');
+/* ============================================================
+   事件
+   ============================================================ */
+function bindEvents() {
+  const hasFiles = e => e.dataTransfer && [...(e.dataTransfer.types || [])].includes('Files');
   let depth = 0;
 
-  const stop = e => { e.preventDefault(); e.stopPropagation(); };
-
-  dz.addEventListener('click', () => input.click());
-  ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => {
-    stop(e); depth++; dz.classList.add('drag');
-  }));
-  dz.addEventListener('dragleave', e => { stop(e); if (--depth <= 0) { depth = 0; dz.classList.remove('drag'); } });
-  dz.addEventListener('drop', e => {
-    stop(e); depth = 0; dz.classList.remove('drag');
-    const files = e.dataTransfer && e.dataTransfer.files;
-    if (files && files.length) run(files);
+  window.addEventListener('dragenter', e => { if (!hasFiles(e)) return; e.preventDefault(); depth++; $('#drop').classList.add('drag'); });
+  window.addEventListener('dragover', e => { if (!hasFiles(e)) return; e.preventDefault(); });
+  window.addEventListener('dragleave', e => { if (!hasFiles(e)) return; depth = Math.max(0, depth - 1); if (!depth) $('#drop').classList.remove('drag'); });
+  window.addEventListener('drop', e => {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    depth = 0;
+    $('#drop').classList.remove('drag');
+    loadFiles([...e.dataTransfer.files]);
   });
-  ['dragover', 'drop'].forEach(ev => window.addEventListener(ev, e => e.preventDefault()));
 
-  input.addEventListener('change', e => { if (e.target.files.length) run(e.target.files); });
-  $('#btnNew').addEventListener('click', e => { e.stopPropagation(); resetUI(); input.click(); });
-  $('#btnMd').addEventListener('click', copyMd);
+  $('#drop').addEventListener('click', () => $('#fileInput').click());
+  $('#fileInput').addEventListener('change', e => {
+    if (e.target.files && e.target.files.length) loadFiles([...e.target.files]);
+    e.target.value = '';
+  });
 
-  let timer = null;
+  $('.toolbar').addEventListener('click', e => {
+    const el = e.target.closest('[data-act]');
+    if (!el) return;
+    const act = el.dataset.act;
+    if (act === 'import') $('#fileInput').click();
+    else if (act === 'export') $('#exportMenu').classList.toggle('on');
+    else if (act === 'csv') { $('#exportMenu').classList.remove('on'); exportCSV(); }
+    else if (act === 'md') { $('#exportMenu').classList.remove('on'); exportMD(); }
+    else if (act === 'print') { $('#exportMenu').classList.remove('on'); window.print(); }
+  });
+
+  $('#kpi').addEventListener('click', e => {
+    const c = e.target.closest('[data-metric]');
+    if (!c) return;
+    S.metric = c.dataset.metric;
+    $$('#metricSeg button').forEach(x => x.classList.toggle('on', x.dataset.metric === S.metric));
+    renderKPI();
+    renderTrend();
+    document.getElementById('trendPanel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+
+  $('#metricSeg').addEventListener('click', e => {
+    const b = e.target.closest('[data-metric]');
+    if (!b) return;
+    S.metric = b.dataset.metric;
+    $$('#metricSeg button').forEach(x => x.classList.toggle('on', x === b));
+    renderKPI();
+    renderTrend();
+  });
+
+  $('#dimSeg').addEventListener('click', e => {
+    const b = e.target.closest('[data-dim]');
+    if (!b) return;
+    S.dim = b.dataset.dim;
+    S.page = 1;
+    $$('#dimSeg button').forEach(x => x.classList.toggle('on', x === b));
+    renderTable();
+  });
+
+  $('#search').addEventListener('input', e => { S.q = e.target.value.trim(); S.page = 1; renderTable(); });
+
+  $('#tableWrap').addEventListener('click', e => {
+    const th = e.target.closest('th[data-k]');
+    if (th) {
+      const k = th.dataset.k, st = S.sort[S.dim];
+      if (st.k === k) st.d = -st.d;
+      else { st.k = k; st.d = (k === 'name' || k === 'date') ? 1 : -1; }
+      S.page = 1;
+      renderTable();
+      return;
+    }
+    const tr = e.target.closest('tbody tr[data-id]');
+    if (!tr) return;
+    const id = tr.dataset.id;
+    if (S.dim === 'date') openDayDrawer(id);
+    else openEntityDrawer(S.dim, id);
+  });
+
+  $('#pager').addEventListener('click', e => {
+    const b = e.target.closest('[data-pg]');
+    if (!b || b.disabled) return;
+    S.page = Number(b.dataset.pg);
+    renderTable();
+    document.getElementById('tablePanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  $('#struct').addEventListener('click', e => {
+    const el = e.target.closest('[data-type]');
+    if (!el) return;
+    toggleFilter('types', el.dataset.type);
+  });
+
+  $('#insights').addEventListener('click', e => {
+    if (!e.target.closest('[data-ins]')) return;
+    S.insOpen = !S.insOpen;
+    renderInsights();
+  });
+
+  $('#filterbar').addEventListener('click', e => {
+    const pop = e.target.closest('[data-pop]');
+    if (pop) {
+      const wrap = pop.closest('.multi');
+      const p = wrap.querySelector('.pop');
+      const wasOpen = p.classList.contains('on');
+      $$('.multi .pop').forEach(x => x.classList.remove('on'));
+      S.openMulti = wasOpen ? null : wrap.dataset.multi;
+      if (!wasOpen) p.classList.add('on');
+      return;
+    }
+    const preset = e.target.closest('[data-preset]');
+    if (preset) {
+      const v = preset.dataset.preset;
+      S.preset = v;
+      if (v === 'all') { S.f.from = ''; S.f.to = ''; }
+      else {
+        const n = Number(v);
+        S.f.to = S.bounds.last;
+        S.f.from = shiftDay(S.bounds.last, -(n - 1));
+        if (S.f.from < S.bounds.first) S.f.from = S.bounds.first;
+      }
+      S.page = 1;
+      refresh();
+      renderFilters();
+      return;
+    }
+    const act = e.target.closest('[data-act]');
+    if (act && act.dataset.act === 'reset') {
+      resetFilters();
+      renderAll();
+      toast('已重置');
+      return;
+    }
+    if (act && act.dataset.act === 'compare') {
+      S.compare = !S.compare;
+      refresh();
+      renderFilters();
+      toast(S.compare ? '已开启环比' : '已关闭环比');
+    }
+  });
+
+  $('#filterbar').addEventListener('change', e => {
+    const cb = e.target.closest('input[type=checkbox]');
+    if (cb) {
+      const wrap = cb.closest('.multi');
+      const name = wrap.dataset.multi;
+      const key = name === 'model' ? 'models' : name === 'key' ? 'keys' : 'users';
+      const set = S.f[key];
+      if (cb.checked) set.add(cb.value); else set.delete(cb.value);
+      S.page = 1;
+      const lb = wrap.querySelector('.lb');
+      const total = name === 'model' ? S.options.models.length : name === 'key' ? S.options.keys.length : S.options.users.length;
+      lb.textContent = set.size === 0 ? '全部' : set.size === 1 ? [...set][0] : set.size + ' 项';
+      wrap.querySelector('.cnt').textContent = set.size || total;
+      refresh();
+      return;
+    }
+    const id = e.target.id;
+    if (id === 'dFrom' || id === 'dTo') {
+      const v = e.target.value;
+      if (id === 'dFrom') S.f.from = v; else S.f.to = v;
+      S.preset = '';
+      S.page = 1;
+      refresh();
+      const seg = $('#presetSeg');
+      if (seg) $$('#presetSeg button').forEach(b => b.classList.remove('on'));
+    }
+  });
+
+  $('#drawer').addEventListener('click', e => {
+    if (e.target.closest('[data-close]')) { closeDrawer(); return; }
+    const only = e.target.closest('[data-only]');
+    if (only) {
+      const d = only.dataset.only;
+      S.f.from = d; S.f.to = d; S.preset = '';
+      S.page = 1;
+      closeDrawer();
+      S.selDate = null;
+      renderAll();
+      toast(`已筛定为 ${d}`);
+      return;
+    }
+    const ent = e.target.closest('[data-only-entity]');
+    if (ent) {
+      const dim = ent.dataset.dim2, v = ent.dataset.onlyEntity;
+      const key = dim === 'key' ? 'keys' : dim === 'model' ? 'models' : 'types';
+      S.f[key] = new Set([v]);
+      S.page = 1;
+      closeDrawer();
+      renderAll();
+      toast(`已筛定为 ${v}`);
+    }
+  });
+
+  $('#scrim').addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.multi')) $$('.multi .pop').forEach(p => { p.classList.remove('on'); S.openMulti = null; });
+    if (!e.target.closest('.menu-wrap')) $('#exportMenu').classList.remove('on');
+  });
+
+  let rt;
   window.addEventListener('resize', () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => { if (DATA) drawDaily($('#chartDaily'), DATA.daily); }, 180);
+    clearTimeout(rt);
+    rt = setTimeout(() => { if (S.A && !$('#trendPanel').hidden) renderTrend(); }, 200);
   });
-})();
+}
+
+bindEvents();
 </script>
 </body>
 </html>
