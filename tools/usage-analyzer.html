@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 用量账单分析</title>
+<style>
+:root{
+  --bg:#0a0e13; --card:#121922; --card2:#171f29; --line:#222c38; --line2:#2d3a49;
+  --txt:#e6edf5; --txt2:#93a3b8; --txt3:#5f7186;
+  --accent:#4f8ff7; --green:#38d9a9; --amber:#f7b955; --red:#f2637a; --purple:#a78bfa;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(900px 500px at 12% -10%, rgba(79,143,247,.10), transparent 60%),
+    radial-gradient(700px 400px at 92% 0%, rgba(56,217,169,.07), transparent 60%),
+    var(--bg);
+  color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  font-size:14px; line-height:1.55; min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+.app{max-width:1180px;margin:0 auto;padding:26px 22px 90px}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:11px}
+.logo{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+  background:linear-gradient(135deg,#4f8ff7,#38d9a9);color:#06202b;font-weight:800;font-size:15px}
+.brand h1{font-size:16px;margin:0;letter-spacing:.2px;font-weight:600}
+.brand .sub{font-size:11.5px;color:var(--txt3);margin-top:1px}
+.actions{display:flex;gap:8px}
+button{font:inherit;color:var(--txt);cursor:pointer;border-radius:9px;transition:.16s}
+.btn{border:1px solid var(--line2);background:var(--card2);padding:7px 13px;font-size:12.5px}
+.btn:hover{border-color:var(--accent);color:#cfe2ff}
+.btn-primary{background:linear-gradient(135deg,#3f7fe8,#2fb894);border:0;color:#fff;padding:9px 20px;font-size:13px;font-weight:600}
+.btn-primary:hover{filter:brightness(1.08)}
+
+/* dropzone */
+.dropzone{border:1.5px dashed var(--line2);border-radius:16px;background:rgba(19,26,34,.55);
+  padding:52px 24px;text-align:center;transition:.18s;margin-bottom:8px}
+.dropzone.drag{border-color:var(--accent);background:rgba(79,143,247,.08);transform:scale(1.003)}
+.dropzone.compact{padding:13px 18px;display:flex;align-items:center;gap:14px;text-align:left;border-style:solid;background:var(--card)}
+.dz-icon{font-size:26px;color:var(--accent);margin-bottom:6px}
+.dropzone.compact .dz-icon{font-size:18px;margin:0}
+.dropzone h2{font-size:15px;margin:0 0 6px;font-weight:600}
+.dropzone p{margin:0;color:var(--txt2);font-size:12.5px}
+.dropzone code{background:#1b2531;padding:2px 6px;border-radius:5px;font-size:11.5px;color:#9dc0f0}
+.dropzone .hint{color:var(--txt3);font-size:11.5px;margin-top:12px}
+.dropzone.compact .hint,.dropzone.compact h2,.dropzone.compact .btn-primary{display:none}
+.dropzone.compact .fname{font-size:12.5px;color:var(--txt2)}
+.dropzone .btn-primary{margin-top:16px}
+
+/* cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:11px;margin:14px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;position:relative;overflow:hidden}
+.card::after{content:'';position:absolute;inset:0 0 auto 0;height:2px;background:var(--accent);opacity:.55}
+.card.g::after{background:var(--green)}.card.a::after{background:var(--amber)}.card.p::after{background:var(--purple)}
+.card .k{font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--txt3);font-weight:600}
+.card .v{font-size:23px;font-weight:650;margin-top:4px;letter-spacing:-.4px;font-variant-numeric:tabular-nums}
+.card .v small{font-size:12px;font-weight:500;color:var(--txt2);margin-left:3px;letter-spacing:0}
+.card .s{font-size:11.5px;color:var(--txt2);margin-top:2px}
+
+/* panels */
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:17px 19px;margin-top:15px}
+.panel h2{font-size:13.5px;margin:0 0 14px;font-weight:600;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.panel h2 small{font-size:11.5px;color:var(--txt3);font-weight:400}
+.cols{display:grid;grid-template-columns:1.35fr 1fr;gap:15px}
+.cols .panel{margin-top:15px}
+
+/* table */
+.tbl-wrap{overflow-x:auto;margin-top:14px;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:12.5px;white-space:nowrap}
+th{font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--txt3);
+  font-weight:600;text-align:right;padding:0 10px 8px;border-bottom:1px solid var(--line2)}
+th:first-child,td:first-child{text-align:left;padding-left:2px}
+td{padding:8px 10px;text-align:right;border-bottom:1px solid rgba(34,44,56,.6);font-variant-numeric:tabular-nums}
+tbody tr:hover td{background:rgba(79,143,247,.045)}
+tbody tr:last-child td{border-bottom:0}
+tr.total td{font-weight:650;border-top:1px solid var(--line2);border-bottom:0;padding-top:10px}
+.dim{color:var(--txt3)}
+.pill{display:inline-block;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+.pill.ok{background:rgba(56,217,169,.14);color:#5ee8c0}
+.pill.mid{background:rgba(247,185,85,.14);color:#f7c877}
+.pill.bad{background:rgba(242,99,122,.14);color:#f78d9d}
+
+/* bars */
+.hbar{margin-top:4px}
+.hbar-row{display:grid;grid-template-columns:132px 1fr 100px;gap:12px;align-items:center;padding:6px 0}
+.hbar-label{font-size:12.5px;color:var(--txt2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hbar-track{height:9px;background:#1b2531;border-radius:5px;overflow:hidden}
+.hbar-fill{height:100%;border-radius:5px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.hbar-val{font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums;color:var(--txt)}
+.hbar-val small{color:var(--txt3);font-size:11px;margin-left:5px}
+
+/* stacked */
+.stack{display:flex;height:26px;border-radius:7px;overflow:hidden;gap:2px;margin:2px 0 14px}
+.stack div{transition:.3s}
+.stack-legend{display:grid;gap:1px}
+.lg-row{display:grid;grid-template-columns:10px 1fr repeat(3,88px);gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(34,44,56,.55);font-size:12.5px}
+.lg-row:last-child{border-bottom:0}
+.lg-dot{width:9px;height:9px;border-radius:3px}
+.lg-row span:not(.lg-name){text-align:right;font-variant-numeric:tabular-nums}
+.lg-head{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--txt3);font-weight:600}
+
+/* insights */
+.insights{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.insights li{background:var(--card2);border-left:3px solid var(--txt3);border-radius:8px;
+  padding:10px 13px;font-size:12.8px;color:#c9d5e2;line-height:1.6}
+.insights li.good{border-left-color:var(--green)}
+.insights li.warn{border-left-color:var(--amber)}
+.insights li.info{border-left-color:var(--accent)}
+.insights li b{color:#fff;font-weight:600}
+
+.notice{background:rgba(247,185,85,.09);border:1px solid rgba(247,185,85,.3);color:#f2cf9a;
+  border-radius:10px;padding:11px 14px;font-size:12.5px;margin-top:12px}
+.notice.err{background:rgba(242,99,122,.09);border-color:rgba(242,99,122,.35);color:#f8b3bd}
+
+.meta{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:2px}
+.tag{font-size:11.5px;color:var(--txt2);background:var(--card2);border:1px solid var(--line);
+  border-radius:20px;padding:3px 10px}
+.tag b{color:var(--txt);font-weight:600}
+
+/* chart */
+.chart svg{display:block;width:100%;height:auto}
+.chart .bar:hover{opacity:.82}
+.grid-line{stroke:#1e2731;stroke-width:1}
+.axis-txt{fill:#5f7186;font-size:10.5px;font-family:inherit}
+
+.foot{color:var(--txt3);font-size:11.5px;text-align:center;margin-top:24px}
+
+@media (max-width:820px){
+  .cols{grid-template-columns:1fr}
+  .hbar-row{grid-template-columns:92px 1fr 84px}
+  .lg-row{grid-template-columns:10px 1fr 74px;font-size:12px}
+  .lg-row span:nth-child(4){display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="logo">▦</div>
+      <div>
+        <h1>AI 用量账单分析</h1>
+        <div class="sub">本地解析 · 数据不上传</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="btnMd" hidden>复制 Markdown 报告</button>
+      <button class="btn" id="btnNew" hidden>重新导入</button>
+    </div>
+  </header>
+
+  <section class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" multiple accept=".zip,.csv" hidden>
+    <div class="dz-icon" id="dzIcon">⤓</div>
+    <h2 id="dzTitle">把导出的 zip / csv 拖到这里</h2>
+    <p id="dzDesc">支持 <code>usage_data_*.zip</code>，也可以同时拖入 <code>cost-*.csv</code> 和 <code>amount-*.csv</code></p>
+    <div class="fname" id="dzFile" hidden></div>
+    <button class="btn-primary" id="btnPick">选择文件</button>
+    <p class="hint">所有计算在浏览器内完成 · 不会上传任何数据</p>
+  </section>
+
+  <main id="report" hidden>
+    <div class="meta" id="meta"></div>
+    <div id="notice"></div>
+    <div class="cards" id="cards"></div>
+
+    <section class="panel">
+      <h2>每日趋势 <small>费用（柱）· 请求数（线）</small></h2>
+      <div class="chart" id="chartDaily"></div>
+      <div class="tbl-wrap" id="tblDaily"></div>
+    </section>
+
+    <section class="panel">
+      <h2>成本结构 <small>token 占比 vs 费用占比</small></h2>
+      <div id="struct"></div>
+    </section>
+
+    <div class="cols">
+      <section class="panel"><h2>API Key</h2><div id="keyBox"></div></section>
+      <section class="panel"><h2>模型</h2><div id="modelBox"></div></section>
+    </div>
+
+    <section class="panel">
+      <h2>计费档位 <small>同一计费项出现多个单价</small></h2>
+      <div id="priceBox"></div>
+    </section>
+
+    <section class="panel">
+      <h2>关键发现</h2>
+      <ul class="insights" id="insights"></ul>
+    </section>
+    <div class="foot" id="foot"></div>
+  </main>
+</div>
+
+<script>
+/* ============================ 基础工具 ============================ */
+const $ = (s, r = document) => r.querySelector(s);
+const N = v => { const n = Number(String(v ?? '').replace(/[, ]/g, '')); return isFinite(n) ? n : 0; };
+const int = n => Math.round(n).toLocaleString('en-US');
+const tk = n => n >= 1e9 ? (n / 1e9).toFixed(2) + 'B'
+  : n >= 1e6 ? (n / 1e6).toFixed(2) + 'M'
+  : n >= 1e3 ? (n / 1e3).toFixed(1) + 'K' : String(Math.round(n));
+const cny = v => v >= 1000 ? v.toLocaleString('en-US', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+  : v >= 100 ? v.toFixed(2) : v >= 1 ? v.toFixed(3) : v.toFixed(4);
+const pct = v => (v * 100).toFixed(1) + '%';
+const perM = p => (p * 1e6).toLocaleString('en-US', { maximumFractionDigits: 4 });
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const WD = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+const p2 = n => String(n).padStart(2, '0');
+const DAY = s => String(s || '').slice(0, 10);
+function weekday(ds) {
+  const [y, m, d] = ds.split('-').map(Number);
+  if (!y || !m || !d) return '';
+  return WD[new Date(y, m - 1, d).getDay()];
+}
+function fmtLocal(d) { return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); }
+function dateRange(a, b) {
+  const out = [];
+  const [y1, m1, d1] = a.split('-').map(Number), [y2, m2, d2] = b.split('-').map(Number);
+  const cur = new Date(y1, m1 - 1, d1), end = new Date(y2, m2 - 1, d2);
+  let guard = 0;
+  while (cur <= end && guard++ < 400) { out.push(fmtLocal(cur)); cur.setDate(cur.getDate() + 1); }
+  return out;
+}
+const TYPE_LABEL = {
+  input_cache_hit_tokens: '缓存命中输入',
+  input_cache_miss_tokens: '缓存未命中输入',
+  output_tokens: '输出',
+  request_count: '请求数'
+};
+const TYPE_COLOR = {
+  input_cache_hit_tokens: '#38d9a9',
+  input_cache_miss_tokens: '#f7b955',
+  output_tokens: '#4f8ff7',
+  request_count: '#5f7186'
+};
+const PALETTE = ['#38d9a9', '#f7b955', '#4f8ff7', '#a78bfa', '#f2637a', '#22d3ee', '#facc15'];
+const typeLabel = t => TYPE_LABEL[t] || t;
+const typeColor = (t, i) => TYPE_COLOR[t] || PALETTE[(i || 0) % PALETTE.length];
+
+/* ============================ CSV 解析 ============================ */
+function parseCSV(text) {
+  text = String(text).replace(/^\uFEFF/, '');
+  const rows = [];
+  let row = [], field = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQ = false; }
+      else field += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ',') { row.push(field); field = ''; }
+    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+    else if (c !== '\r') field += c;
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  const head = (rows.shift() || []).map(h => h.trim());
+  return rows
+    .filter(r => r.length > 1 && r.some(x => x !== ''))
+    .map(r => { const o = {}; head.forEach((h, i) => { o[h] = (r[i] ?? '').trim(); }); return o; });
+}
+
+/* ============================ ZIP 解析（零依赖） ============================ */
+function decodeBytes(u8) {
+  let s = new TextDecoder('utf-8').decode(u8);
+  if (s.includes('\uFFFD')) {
+    try { s = new TextDecoder('gbk').decode(u8); } catch (e) { /* ignore */ }
+  }
+  return s;
+}
+async function inflateRaw(u8) {
+  if (typeof DecompressionStream === 'undefined') {
+    throw new Error('当前浏览器不支持 zip 解压，请先手动解压后再拖入 CSV');
+  }
+  const stream = new Blob([u8]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+async function readZip(buf) {
+  const u8 = new Uint8Array(buf);
+  const dv = new DataView(buf);
+  let eocd = -1;
+  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 66000); i--) {
+    if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error('不是有效的 zip 文件');
+  const count = dv.getUint16(eocd + 10, true);
+  let off = dv.getUint32(eocd + 16, true);
+  const out = [];
+  for (let n = 0; n < count; n++) {
+    if (off + 46 > u8.length || dv.getUint32(off, true) !== 0x02014b50) break;
+    const method = dv.getUint16(off + 10, true);
+    const compSize = dv.getUint32(off + 20, true);
+    const nameLen = dv.getUint16(off + 28, true);
+    const extraLen = dv.getUint16(off + 30, true);
+    const commentLen = dv.getUint16(off + 32, true);
+    const lho = dv.getUint32(off + 42, true);
+    const name = decodeBytes(u8.subarray(off + 46, off + 46 + nameLen));
+    const lNameLen = dv.getUint16(lho + 26, true);
+    const lExtraLen = dv.getUint16(lho + 28, true);
+    const start = lho + 30 + lNameLen + lExtraLen;
+    if (!name.endsWith('/') && compSize > 0 && start + compSize <= u8.length) {
+      const comp = u8.subarray(start, start + compSize);
+      const data = method === 0 ? comp : method === 8 ? await inflateRaw(comp) : null;
+      if (data) out.push({ name, text: decodeBytes(data) });
+    }
+    off += 46 + nameLen + extraLen + commentLen;
+  }
+  return out;
+}
+
+/* ============================ 文件识别与归集 ============================ */
+function classify(name, text) {
+  const rows = parseCSV(text);
+  if (!rows.length) return null;
+  const head = Object.keys(rows[0]);
+  if (head.includes('wallet_type')) return { kind: 'cost', rows };
+  if (head.includes('api_key') || (head.includes('type') && head.includes('amount'))) return { kind: 'amount', rows };
+  if (/amount/i.test(name)) return { kind: 'amount', rows };
+  if (/cost/i.test(name)) return { kind: 'cost', rows };
+  return null;
+}
+
+async function collect(files) {
+  const cost = [], amount = [], names = [];
+  for (const f of files) {
+    if (/\.zip$/i.test(f.name)) {
+      const entries = await readZip(await f.arrayBuffer());
+      for (const e of entries) {
+        if (!/\.csv$/i.test(e.name)) continue;
+        const r = classify(e.name, e.text);
+        if (!r) continue;
+        (r.kind === 'cost' ? cost : amount).push(...r.rows);
+        names.push(e.name.split('/').pop());
+      }
+    } else if (/\.csv$/i.test(f.name) || f.type === 'text/csv' || f.type === 'text/plain') {
+      const r = classify(f.name, await f.text());
+      if (!r) continue;
+      (r.kind === 'cost' ? cost : amount).push(...r.rows);
+      names.push(f.name);
+    }
+  }
+  return { cost, amount, names };
+}
+
+/* ============================ 分析 ============================ */
+function blankBucket() { return { req: 0, hit: 0, miss: 0, out: 0, cost: 0, other: 0 }; }
+function bump(o, type, n) {
+  if (type === 'request_count') o.req += n;
+  else if (type === 'input_cache_hit_tokens') o.hit += n;
+  else if (type === 'input_cache_miss_tokens') o.miss += n;
+  else if (type === 'output_tokens') o.out += n;
+  else o.other += n;
+}
+
+function analyze(costRows, amountRows) {
+  const cost = costRows || [], amt = amountRows || [];
+  const models = [...new Set([...cost.map(r => r.model), ...amt.map(r => r.model)].filter(Boolean))];
+  const users = [...new Set([...cost.map(r => r.user_id), ...amt.map(r => r.user_id)].filter(Boolean))];
+  const currency = (cost.find(r => r.currency) || {}).currency || 'CNY';
+  const wallets = [...new Set(cost.map(r => r.wallet_type).filter(Boolean))];
+
+  /* cost 表：权威费用 */
+  const dayCost = new Map();
+  let costTotal = 0;
+  for (const r of cost) {
+    const d = DAY(r.start_time_iso); if (!d) continue;
+    const v = N(r.cost); costTotal += v;
+    dayCost.set(d, (dayCost.get(d) || 0) + v);
+  }
+
+  /* amount 表：用量与折算费用 */
+  const dayMap = new Map(), typeMap = new Map(), keyMap = new Map(), modelMap = new Map(), tierMap = new Map();
+  let calcTotal = 0;
+  const get = (map, k, init) => { if (!map.has(k)) map.set(k, init()); return map.get(k); };
+
+  for (const r of amt) {
+    const d = DAY(r.start_time_iso);
+    const type = r.type || '';
+    const price = N(r.price);
+    const amount = N(r.amount);
+    const c = price * amount;
+    calcTotal += c;
+    const kName = r.api_key_name || r.api_key || '（未命名）';
+    const mName = r.model || '（未知模型）';
+
+    const dm = get(dayMap, d, blankBucket); dm.cost += c; bump(dm, type, amount);
+    const tm = get(typeMap, type, () => ({ amount: 0, cost: 0, prices: new Set() }));
+    tm.amount += amount; tm.cost += c; if (price) tm.prices.add(price);
+    const km = get(keyMap, kName, blankBucket); km.cost += c; bump(km, type, amount);
+    const mm = get(modelMap, mName, blankBucket); mm.cost += c; bump(mm, type, amount);
+    if (price) {
+      const t = get(tierMap, mName + '|' + type + '|' + price, () => ({ model: mName, type, price, amount: 0, cost: 0 }));
+      t.amount += amount; t.cost += c;
+    }
+  }
+
+  /* 日期序列 */
+  const allDates = [...new Set([...dayCost.keys(), ...dayMap.keys()])].filter(Boolean).sort();
+  const dates = allDates.length > 1 ? dateRange(allDates[0], allDates[allDates.length - 1]) : allDates;
+
+  const hasCostTable = cost.length > 0;
+  const totalCost = hasCostTable ? costTotal : calcTotal;
+
+  const daily = dates.map(d => {
+    const a = dayMap.get(d) || blankBucket();
+    const costVal = hasCostTable ? (dayCost.get(d) || 0) : a.cost;
+    const input = a.hit + a.miss;
+    return { date: d, cost: costVal, req: a.req, hit: a.hit, miss: a.miss, out: a.out, input, hitRate: input ? a.hit / input : 0 };
+  });
+
+  const sum = daily.reduce((o, d) => {
+    o.cost += d.cost; o.req += d.req; o.hit += d.hit; o.miss += d.miss; o.out += d.out;
+    return o;
+  }, { cost: 0, req: 0, hit: 0, miss: 0, out: 0 });
+  const totalInput = sum.hit + sum.miss;
+  const totalTokens = totalInput + sum.out;
+
+  const types = [...typeMap.entries()]
+    .filter(([type]) => type !== 'request_count')
+    .map(([type, v]) => {
+      const prices = [...v.prices].sort((a, b) => a - b);
+      return {
+        type, amount: v.amount, cost: v.cost, prices,
+        priceMin: prices[0] || 0, priceMax: prices[prices.length - 1] || 0,
+        tokenShare: totalTokens ? v.amount / totalTokens : 0,
+        costShare: totalCost ? v.cost / totalCost : 0
+      };
+    }).sort((a, b) => b.cost - a.cost);
+
+  const pack = (name, b) => {
+    const input = b.hit + b.miss;
+    return {
+      name, cost: b.cost, req: b.req, hit: b.hit, miss: b.miss, out: b.out, input,
+      hitRate: input ? b.hit / input : 0,
+      perReq: b.req ? b.cost / b.req : 0,
+      inputPerReq: b.req ? input / b.req : 0
+    };
+  };
+  const byKey = [...keyMap.entries()].map(([n, b]) => pack(n, b)).sort((a, b) => b.cost - a.cost);
+  const byModel = [...modelMap.entries()].map(([n, b]) => pack(n, b)).sort((a, b) => b.cost - a.cost);
+
+  const tiers = [...tierMap.values()].sort((a, b) =>
+    a.model.localeCompare(b.model) || a.type.localeCompare(b.type) || b.price - a.price);
+
+  /* 同一「模型 + 计费项」出现多档单价（峰谷折扣或不同计费批次） */
+  const tierGroups = new Map();
+  tiers.forEach(t => {
+    const k = t.model + '|' + t.type;
+    if (!tierGroups.has(k)) tierGroups.set(k, []);
+    tierGroups.get(k).push(t);
+  });
+  const multiTier = [...tierGroups.values()]
+    .filter(list => list.length > 1)
+    .map(list => {
+      const prices = list.map(t => t.price).sort((a, b) => a - b);
+      const top = prices[prices.length - 1];
+      const high = list.filter(t => t.price === top);
+      const amount = list.reduce((s, t) => s + t.amount, 0);
+      return {
+        model: list[0].model, type: list[0].type, prices,
+        ratio: prices[0] ? top / prices[0] : 1,
+        highCost: high.reduce((s, t) => s + t.cost, 0),
+        highShare: amount ? high.reduce((s, t) => s + t.amount, 0) / amount : 0
+      };
+    });
+
+  return {
+    models, users, currency, wallets, dates, daily, byKey, byModel, types, tiers, multiTier,
+    total: { ...sum, cost: totalCost, input: totalInput, tokens: totalTokens, hitRate: totalInput ? sum.hit / totalInput : 0 },
+    costTotal, calcTotal,
+    mismatch: hasCostTable && amt.length ? Math.abs(calcTotal - costTotal) : null,
+    hasCostTable, hasAmount: amt.length > 0,
+    perReq: sum.req ? totalCost / sum.req : 0,
+    first: dates[0], last: dates[dates.length - 1]
+  };
+}
+
+/* ============================ 渲染 ============================ */
+let DATA = null, FILE_NAMES = [];
+
+const hitTone = r => (r >= 0.95 ? 'ok' : r >= 0.85 ? 'mid' : 'bad');
+const hitPill = r => `<span class="pill ${hitTone(r)}">${pct(r)}</span>`;
+const axNum = v => (v >= 100 ? Math.round(v).toLocaleString('en-US') : v >= 10 ? v.toFixed(0) : v >= 1 ? v.toFixed(1) : v.toFixed(2));
+
+function renderMeta(d) {
+  const tags = [
+    `周期 <b>${d.first || '-'} ~ ${d.last || '-'}</b> · ${d.dates.length} 天`,
+    `用户 <b>${d.users.length}</b>`,
+    `币种 <b>${esc(d.currency)}</b>`
+  ];
+  if (d.wallets.length) tags.push(`钱包 <b>${esc(d.wallets.join(' / '))}</b>`);
+  if (FILE_NAMES.length) tags.push(`文件 <b>${esc(FILE_NAMES.join(' · '))}</b>`);
+  $('#meta').innerHTML = tags.map(t => `<span class="tag">${t}</span>`).join('');
+}
+
+function renderCards(d) {
+  const t = d.total;
+  const days = d.dates.length || 1;
+  const peak = Math.max.apply(null, d.daily.map(x => x.cost).concat([0]));
+  const cards = [
+    { k: '总费用', cls: '', v: `${cny(t.cost)}<small>${esc(d.currency)}</small>`, s: `日均 ${cny(t.cost / days)} · 峰值 ${cny(peak)}` },
+    { k: '请求数', cls: 'p', v: `${int(t.req)}<small>次</small>`, s: `日均 ${int(t.req / days)} 次` }
+  ];
+  if (d.hasAmount) {
+    cards.push({ k: '总 token', cls: 'g', v: tk(t.tokens), s: `输入 ${tk(t.input)} · 输出 ${tk(t.out)}` });
+    cards.push({ k: '缓存命中率', cls: 'g', v: pct(t.hitRate), s: `命中 ${tk(t.hit)} / 未命中 ${tk(t.miss)}` });
+  }
+  cards.push({ k: '每请求成本', cls: '', v: `${cny(d.perReq)}<small>${esc(d.currency)}</small>`, s: d.hasAmount ? `平均输入 ${int(t.input / (t.req || 1))} tokens` : '按请求数摊薄' });
+  if (d.hasAmount && t.tokens) {
+    cards.push({ k: '有效单价', cls: 'a', v: cny(d.costTotal / t.tokens * 1e6), s: `元 / 百万 token（混合价）` });
+  }
+  $('#cards').innerHTML = cards.map(c =>
+    `<div class="card ${c.cls}"><div class="k">${c.k}</div><div class="v">${c.v}</div><div class="s">${c.s}</div></div>`
+  ).join('');
+}
+
+function drawDaily(host, daily) {
+  const W = Math.max(host.clientWidth || 860, 460);
+  const H = 302, padL = 54, padR = 56, padT = 18, padB = 46;
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const maxCost = Math.max.apply(null, daily.map(d => d.cost).concat([0.0001])) || 1;
+  const maxReq = Math.max.apply(null, daily.map(d => d.req).concat([1])) || 1;
+  const step = iw / Math.max(daily.length, 1);
+  const bw = Math.max(6, Math.min(46, step * 0.52));
+  const yC = v => padT + ih - (v / maxCost) * ih;
+  const yR = v => padT + ih - (v / maxReq) * ih;
+
+  let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  s += `<defs><linearGradient id="gb" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#5c9bfb"/><stop offset="1" stop-color="#2b5ea8" stop-opacity=".3"/></linearGradient></defs>`;
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + ih * i / 4;
+    s += `<line class="grid-line" x1="${padL}" y1="${y.toFixed(1)}" x2="${padL + iw}" y2="${y.toFixed(1)}"/>`;
+    s += `<text class="axis-txt" x="${padL - 9}" y="${(y + 3.5).toFixed(1)}" text-anchor="end">${axNum(maxCost * (1 - i / 4))}</text>`;
+    s += `<text class="axis-txt" x="${padL + iw + 9}" y="${(y + 3.5).toFixed(1)}" fill="#3fae8d">${axNum(maxReq * (1 - i / 4))}</text>`;
+  }
+  s += `<text class="axis-txt" x="${padL - 9}" y="${padT - 6}" text-anchor="end" fill="#7d8ea3">费用</text>`;
+  s += `<text class="axis-txt" x="${padL + iw + 9}" y="${padT - 6}" fill="#3fae8d">请求</text>`;
+
+  daily.forEach((d, i) => {
+    const cx = padL + step * i + step / 2;
+    const bh = Math.max(0, (d.cost / maxCost) * ih);
+    s += `<rect class="bar" x="${(cx - bw / 2).toFixed(1)}" y="${(padT + ih - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="4" fill="url(#gb)">` +
+      `<title>${d.date} ${weekday(d.date)}\n费用 ${cny(d.cost)} ${d.currency || ''}\n请求 ${int(d.req)}\n缓存命中率 ${pct(d.hitRate)}\n输入 ${tk(d.input)} · 输出 ${tk(d.out)}</title></rect>`;
+    s += `<text class="axis-txt" x="${cx.toFixed(1)}" y="${padT + ih + 16}" text-anchor="middle">${d.date.slice(5)}</text>`;
+    s += `<text class="axis-txt" x="${cx.toFixed(1)}" y="${padT + ih + 30}" text-anchor="middle" style="font-size:9.5px;opacity:.75">${weekday(d.date)}</text>`;
+  });
+
+  const pts = daily.map((d, i) => [padL + step * i + step / 2, yR(d.req)]);
+  s += `<polyline fill="none" stroke="#38d9a9" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" opacity=".85" points="${pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}"/>`;
+  pts.forEach((p, i) => {
+    s += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.2" fill="#0a0e13" stroke="#38d9a9" stroke-width="2"><title>${daily[i].date} 请求 ${int(daily[i].req)}</title></circle>`;
+  });
+  s += `</svg>`;
+  host.innerHTML = s;
+}
+
+function renderDailyTable(d) {
+  const head = ['日期', '星期', '费用', '请求数', '输入', '其中未命中', '输出', '输入/请求', '缓存命中率'];
+  const rows = d.daily.map(x => `<tr>
+    <td>${x.date}</td><td class="dim">${weekday(x.date)}</td>
+    <td><b>${cny(x.cost)}</b></td><td>${int(x.req)}</td>
+    <td>${tk(x.input)}</td><td>${tk(x.miss)}</td><td>${tk(x.out)}</td>
+    <td>${x.req ? int(x.input / x.req) : '—'}</td><td>${x.input ? hitPill(x.hitRate) : '<span class="dim">—</span>'}</td>
+  </tr>`).join('');
+  const t = d.total;
+  const totalRow = `<tr class="total"><td>合计</td><td class="dim">${d.dates.length} 天</td>
+    <td>${cny(t.cost)}</td><td>${int(t.req)}</td><td>${tk(t.input)}</td><td>${tk(t.miss)}</td>
+    <td>${tk(t.out)}</td><td>${t.req ? int(t.input / t.req) : '—'}</td><td>${t.input ? hitPill(t.hitRate) : '—'}</td></tr>`;
+  $('#tblDaily').innerHTML = `<table><thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}${totalRow}</tbody></table>`;
+}
+
+function renderStruct(d) {
+  const host = $('#struct');
+  if (!d.hasAmount || !d.types.length) {
+    host.innerHTML = '<div class="dim" style="font-size:12.5px">未找到 amount 明细，无法拆解成本结构。</div>';
+    return;
+  }
+  const items = d.types;
+  const bar = get => `<div class="stack">${items.map((t, i) => {
+    const v = Math.max(get(t), 0);
+    return `<div style="flex:${v} 1 0%;background:${typeColor(t.type, i)}" title="${typeLabel(t.type)} ${pct(v)}"></div>`;
+  }).join('')}</div>`;
+  const rows = items.map((t, i) => `<div class="lg-row">
+      <span class="lg-dot" style="background:${typeColor(t.type, i)}"></span>
+      <span class="lg-name">${esc(typeLabel(t.type))}</span>
+      <span>${t.type === 'request_count' ? int(t.amount) : tk(t.amount)}</span>
+      <span>${cny(t.cost)}</span>
+      <span>${pct(t.costShare)}</span>
+    </div>`).join('');
+  host.innerHTML = `
+    <div class="dim" style="font-size:11px;letter-spacing:.5px;text-transform:uppercase;font-weight:600">token 占比</div>
+    ${bar(t => t.tokenShare)}
+    <div class="dim" style="font-size:11px;letter-spacing:.5px;text-transform:uppercase;font-weight:600">费用占比</div>
+    ${bar(t => t.costShare)}
+    <div class="stack-legend" style="margin-top:12px">
+      <div class="lg-row lg-head"><span></span><span class="lg-name">计费项</span><span>token</span><span>费用</span><span>费用占比</span></div>
+      ${rows}
+    </div>`;
+}
+
+function renderKeys(d) {
+  if (!d.byKey.length) { $('#keyBox').innerHTML = '<div class="dim" style="font-size:12.5px">无数据</div>'; return; }
+  const rows = d.byKey.map(k => `<tr>
+    <td>${esc(k.name)}</td>
+    <td>${cny(k.cost)}</td>
+    <td class="dim">${pct(d.costTotal ? k.cost / d.costTotal : 0)}</td>
+    <td>${int(k.req)}</td>
+    <td>${k.req ? cny(k.perReq) : '—'}</td>
+    <td>${k.req ? int(k.inputPerReq) : '—'}</td>
+    <td>${k.hit ? hitPill(k.hitRate) : '<span class="dim">—</span>'}</td>
+  </tr>`).join('');
+  $('#keyBox').innerHTML = `<table><thead><tr><th>Key</th><th>费用</th><th>占比</th><th>请求</th><th>每请求</th><th>输入/请求</th><th>命中率</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderModels(d) {
+  if (!d.byModel.length) { $('#modelBox').innerHTML = '<div class="dim" style="font-size:12.5px">无数据</div>'; return; }
+  const max = Math.max.apply(null, d.byModel.map(m => m.cost).concat([0.0001]));
+  $('#modelBox').innerHTML = '<div class="hbar">' + d.byModel.map((m, i) => `
+    <div class="hbar-row">
+      <div class="hbar-label" title="${esc(m.name)}">${esc(m.name)}</div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${(m.cost / max * 100).toFixed(1)}%;background:${PALETTE[i % PALETTE.length]}"></div></div>
+      <div class="hbar-val">${cny(m.cost)}<small>${pct(d.costTotal ? m.cost / d.costTotal : 0)}</small></div>
+    </div>`).join('') + '</div>' +
+    `<div class="dim" style="font-size:11.5px;margin-top:10px">共 ${d.byModel.length} 个模型 · 请求 ${int(d.total.req)} 次</div>`;
+}
+
+function renderPrice(d) {
+  const host = $('#priceBox');
+  if (!d.tiers.length) {
+    host.innerHTML = '<div class="dim" style="font-size:12.5px">无单价数据（缺少 amount 明细或 price 列）。</div>';
+    return;
+  }
+  let note = '';
+  if (d.multiTier.length) {
+    note = `<div class="notice" style="margin:0 0 12px">同一模型同一计费项出现多档单价：` +
+      d.multiTier.map(m => `<b>${esc(m.model)}</b> · ${esc(typeLabel(m.type))} ${m.prices.map(perM).join(' / ')} 元/百万（相差 ${m.ratio.toFixed(1)} 倍）`).join('；') +
+      `。通常是峰谷时段折扣或不同计费批次，可确认能否把批量任务调度到低价档。</div>`;
+  }
+  const rows = d.tiers.map(t => {
+    const groupTotal = d.tiers.filter(x => x.type === t.type && x.model === t.model).reduce((s, x) => s + x.amount, 0);
+    return `<tr>
+      <td>${esc(t.model)}</td>
+      <td><span style="color:${typeColor(t.type)}">${esc(typeLabel(t.type))}</span></td>
+      <td>${perM(t.price)}</td>
+      <td>${tk(t.amount)}</td>
+      <td class="dim">${groupTotal ? pct(t.amount / groupTotal) : '—'}</td>
+      <td><b>${cny(t.cost)}</b></td>
+    </tr>`;
+  }).join('');
+  host.innerHTML = note + `<div class="tbl-wrap" style="margin-top:0"><table><thead><tr>
+    <th>模型</th><th>计费项</th><th>单价（元/百万）</th><th>token</th><th>档内占比</th><th>费用</th>
+    </tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function buildInsights(d) {
+  const out = [];
+  const t = d.total;
+  if (d.hasAmount && t.input) {
+    const hr = t.hitRate;
+    if (hr >= 0.95) out.push({ l: 'good', h: `缓存命中率 ${pct(hr)}`, x: '前缀复用非常好，长上下文的重复输入已被有效折价，成本已经接近该用法的下限。' });
+    else if (hr >= 0.85) out.push({ l: 'info', h: `缓存命中率 ${pct(hr)}`, x: '表现尚可。把 system prompt、检索到的文件内容固定在 prompt 开头（避免时间戳、随机 ID 等前缀抖动）还能继续提升。' });
+    else out.push({ l: 'warn', h: `缓存命中率仅 ${pct(hr)}`, x: '大量输入按未命中（高价）计费。优先检查每次请求的 prompt 前缀是否发生变化、会话是否被复用。' });
+
+    const top = d.types.filter(x => x.cost > 0)[0];
+    if (top) out.push({
+      l: 'info', h: `最大成本项：${typeLabel(top.type)}`,
+      x: `吃掉 ${pct(top.costShare)} 的费用，但只占 token 的 ${pct(top.tokenShare)}。` +
+        (top.type === 'input_cache_miss_tokens' ? '压缩这部分收益最高。'
+          : top.type === 'output_tokens' ? '输出单价最高，控制回复长度比压输入更直接。'
+            : '这部分单价低，量再大也不值得优先优化。')
+    });
+
+    const miss = d.types.find(x => x.type === 'input_cache_miss_tokens');
+    if (miss && miss.cost > d.costTotal * 0.2 && miss.priceMin) {
+      const floor = miss.amount * miss.priceMin;
+      out.push({
+        l: 'warn', h: '未命中输入的优化空间',
+        x: `${tk(miss.amount)} tokens 花了 ${cny(miss.cost)} 元；若全部命中缓存只需约 ${cny(floor)} 元，理论上限可省 ${cny(miss.cost - floor)} 元（占总费用 ${pct((miss.cost - floor) / (d.costTotal || 1))}）。`
+      });
+    }
+
+    const outT = d.types.find(x => x.type === 'output_tokens');
+    if (outT && t.req && t.input) {
+      const ratio = outT.amount / t.input;
+      out.push({
+        l: 'info', h: `平均每请求 输入 ${int(t.input / t.req)} · 输出 ${int(outT.amount / t.req)}`,
+        x: `平均每请求输入 ${int(t.input / t.req)} tokens、输出 ${int(outT.amount / t.req)} tokens，输出/输入 ${pct(ratio)}。` +
+          (ratio < 0.02 ? '典型的长上下文 Agent 编码模式：大量代码塞入 prompt，回复很短。' : '输出占比较高，注意是否存在冗长回复。')
+      });
+    }
+  }
+
+  if (d.daily.length) {
+    const peak = d.daily.slice().sort((a, b) => b.cost - a.cost)[0];
+    out.push({
+      l: 'info', h: `峰值日 ${peak.date}（${weekday(peak.date)}）`,
+      x: `花费 ${cny(peak.cost)} 元，占周期 ${pct(peak.cost / (d.costTotal || 1))}，请求 ${int(peak.req)} 次，单请求输入 ${peak.req ? int(peak.input / peak.req) : 0} tokens。`
+    });
+    const costs = d.daily.map(x => x.cost);
+    const mean = costs.reduce((a, b) => a + b, 0) / costs.length;
+    const sd = Math.sqrt(costs.reduce((a, b) => a + (b - mean) * (b - mean), 0) / costs.length);
+    if (mean > 0) {
+      const cv = sd / mean;
+      out.push({
+        l: cv > 0.6 ? 'warn' : 'info', h: `日均 ${cny(mean)}，波动系数 ${cv.toFixed(2)}`,
+        x: `最高 ${cny(Math.max.apply(null, costs))} 元、最低 ${cny(Math.min.apply(null, costs))} 元。` +
+          (cv > 0.6 ? '日间波动很大，预算按峰值而不是均值来估更稳妥。' : '日间支出比较平稳，便于按月估算预算。')
+      });
+    }
+  }
+
+  if (d.byKey.length > 1 && t.input) {
+    const overall = t.hitRate;
+    const bad = d.byKey.filter(k => k.cost > d.costTotal * 0.01 && k.input && k.hitRate < overall - 0.2);
+    if (bad.length) {
+      out.push({
+        l: 'warn', h: `${bad.length} 个 Key 缓存效率明显偏低`,
+        x: bad.map(k => `「${esc(k.name)}」命中率 ${pct(k.hitRate)}、每请求 ${cny(k.perReq)} 元（整体 ${pct(overall)} / ${cny(d.perReq)} 元）`).join('；') + '。建议逐个检查其 prompt 构造方式。'
+      });
+    }
+    const top = d.byKey[0];
+    out.push({
+      l: 'info', h: `主力 Key「${esc(top.name)}」`,
+      x: `承担 ${pct(top.cost / (d.costTotal || 1))} 的费用、${pct(top.req / (t.req || 1))} 的请求，平均每请求输入 ${int(top.inputPerReq)} tokens，命中率 ${pct(top.hitRate)}。`
+    });
+  }
+
+  if (d.multiTier.length) {
+    const total = d.multiTier.reduce((s, m) => s + m.highCost, 0);
+    const byModel = {};
+    d.multiTier.forEach(m => {
+      if (!byModel[m.model]) byModel[m.model] = { ratios: new Set(), items: [] };
+      byModel[m.model].ratios.add(m.ratio.toFixed(1));
+      byModel[m.model].items.push(typeLabel(m.type));
+    });
+    const desc = Object.keys(byModel).map(k =>
+      `${k} 的 ${byModel[k].items.join('/')}（相差 ${[...byModel[k].ratios].join('、')} 倍）`).join('；');
+    out.push({
+      l: 'warn', h: `${d.multiTier.length} 组计费项存在多档单价`,
+      x: `${desc}。同一份用量被计了不同价格，按高价档结算的部分约 ${cny(total)} 元；若非业务必需，可确认能否把批量任务调度到低价档。`
+    });
+  }
+  return out;
+}
+
+function renderInsights(d) {
+  const items = buildInsights(d);
+  $('#insights').innerHTML = items.map(i =>
+    `<li class="${i.l}"><b>${i.h}</b> — ${i.x}</li>`).join('') || '<li>数据量太少，暂无结论。</li>';
+}
+
+function render(d) {
+  renderMeta(d);
+  renderCards(d);
+  drawDaily($('#chartDaily'), d.daily);
+  renderDailyTable(d);
+  renderStruct(d);
+  renderKeys(d);
+  renderModels(d);
+  renderPrice(d);
+  renderInsights(d);
+
+  const notes = [];
+  if (d.mismatch !== null && d.mismatch > 0.01) {
+    notes.push(`明细折算费用 ${cny(d.calcTotal)} 与汇总费用 ${cny(d.costTotal)} 相差 ${cny(d.mismatch)}，报告以汇总表为准。`);
+  }
+  if (!d.hasAmount) notes.push('只识别到费用汇总文件，token 与缓存相关分析已跳过。');
+  $('#notice').innerHTML = notes.length ? `<div class="notice">${notes.join('<br>')}</div>` : '';
+
+  const t = d.total;
+  $('#foot').textContent = `共 ${int(d.amountRowsCount || 0)} 行明细 · 生成于 ${new Date().toLocaleString('zh-CN')}`;
+  if (window.__rowCount) $('#foot').textContent = `共 ${int(window.__rowCount)} 行明细 · 生成于 ${new Date().toLocaleString('zh-CN')}`;
+}
+
+/* ============================ Markdown 导出 ============================ */
+function toMarkdown(d) {
+  const t = d.total;
+  const L = [];
+  L.push(`# AI 用量账单分析（${d.first} ~ ${d.last}）`, '');
+  L.push(`- 总费用：**${cny(t.cost)} ${d.currency}**，日均 ${cny(t.cost / (d.dates.length || 1))}`);
+  L.push(`- 请求数：${int(t.req)} 次，每请求 ${cny(d.perReq)}`);
+  if (d.hasAmount) {
+    L.push(`- token：输入 ${tk(t.input)} / 输出 ${tk(t.out)}，缓存命中率 ${pct(t.hitRate)}`);
+    L.push(`- 有效单价：${cny(d.costTotal / t.tokens * 1e6)} 元 / 百万 token`);
+  }
+  L.push('', '## 每日明细', '', '| 日期 | 星期 | 费用 | 请求 | 输入 | 未命中 | 输出 | 命中率 |', '|---|---|---|---|---|---|---|---|');
+  d.daily.forEach(x => L.push(`| ${x.date} | ${weekday(x.date)} | ${cny(x.cost)} | ${int(x.req)} | ${tk(x.input)} | ${tk(x.miss)} | ${tk(x.out)} | ${x.input ? pct(x.hitRate) : '—'} |`));
+  L.push(`| **合计** | | **${cny(t.cost)}** | ${int(t.req)} | ${tk(t.input)} | ${tk(t.miss)} | ${tk(t.out)} | ${t.input ? pct(t.hitRate) : '—'} |`);
+  if (d.types.length) {
+    L.push('', '## 成本结构', '', '| 计费项 | token | 费用 | 费用占比 |', '|---|---|---|---|');
+    d.types.forEach(x => L.push(`| ${typeLabel(x.type)} | ${tk(x.amount)} | ${cny(x.cost)} | ${pct(x.costShare)} |`));
+  }
+  if (d.byKey.length) {
+    L.push('', '## API Key', '', '| Key | 费用 | 占比 | 请求 | 每请求 | 输入/请求 | 命中率 |', '|---|---|---|---|---|---|---|');
+    d.byKey.forEach(k => L.push(`| ${k.name} | ${cny(k.cost)} | ${pct(d.costTotal ? k.cost / d.costTotal : 0)} | ${int(k.req)} | ${cny(k.perReq)} | ${int(k.inputPerReq)} | ${k.hit ? pct(k.hitRate) : '—'} |`));
+  }
+  L.push('', '## 关键发现', '');
+  buildInsights(d).forEach(i => L.push(`- **${i.h}** — ${i.x.replace(/<[^>]+>/g, '')}`));
+  return L.join('\n');
+}
+
+async function copyMd() {
+  if (!DATA) return;
+  const md = toMarkdown(DATA);
+  try {
+    await navigator.clipboard.writeText(md);
+    flash($('#btnMd'), '已复制');
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = md; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); flash($('#btnMd'), '已复制'); }
+    catch (e2) { alert('复制失败，请手动选择报告内容。'); }
+    document.body.removeChild(ta);
+  }
+}
+function flash(btn, text) {
+  const old = btn.textContent;
+  btn.textContent = text;
+  setTimeout(() => { btn.textContent = old; }, 1500);
+}
+
+/* ============================ 主流程 ============================ */
+function setCompact(names) {
+  const dz = $('#dropzone');
+  dz.classList.add('compact');
+  const f = $('#dzFile');
+  f.hidden = false;
+  f.textContent = names.join(' · ');
+  $('#btnNew').hidden = false;
+}
+
+function resetUI() {
+  DATA = null; FILE_NAMES = []; window.__rowCount = 0;
+  $('#report').hidden = true;
+  $('#dropzone').classList.remove('compact');
+  $('#dzFile').hidden = true;
+  $('#btnNew').hidden = true;
+  $('#btnMd').hidden = true;
+  $('#fileInput').value = '';
+  $('#notice').innerHTML = '';
+}
+
+async function run(fileList) {
+  const files = [].slice.call(fileList || []).filter(Boolean);
+  if (!files.length) return;
+  $('#notice').innerHTML = '';
+  $('#report').hidden = false;
+  try {
+    const { cost, amount, names } = await collect(files);
+    if (!cost.length && !amount.length) {
+      throw new Error('没有识别到有效数据：请拖入 usage_data 的 zip，或包含 cost / amount 列的 csv。');
+    }
+    FILE_NAMES = names;
+    const d = analyze(cost, amount);
+    d.amountRowsCount = amount.length;
+    window.__rowCount = amount.length + cost.length;
+    DATA = d;
+    setCompact(names);
+    $('#btnMd').hidden = false;
+    render(d);
+  } catch (err) {
+    $('#report').hidden = true;
+    $('#notice').innerHTML = `<div class="notice err">解析失败：${esc(err.message || err)}</div>`;
+    $('#dropzone').classList.remove('compact');
+  }
+}
+
+/* ============================ 事件绑定 ============================ */
+(function init() {
+  const dz = $('#dropzone'), input = $('#fileInput');
+  let depth = 0;
+
+  const stop = e => { e.preventDefault(); e.stopPropagation(); };
+
+  dz.addEventListener('click', () => input.click());
+  ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => {
+    stop(e); depth++; dz.classList.add('drag');
+  }));
+  dz.addEventListener('dragleave', e => { stop(e); if (--depth <= 0) { depth = 0; dz.classList.remove('drag'); } });
+  dz.addEventListener('drop', e => {
+    stop(e); depth = 0; dz.classList.remove('drag');
+    const files = e.dataTransfer && e.dataTransfer.files;
+    if (files && files.length) run(files);
+  });
+  ['dragover', 'drop'].forEach(ev => window.addEventListener(ev, e => e.preventDefault()));
+
+  input.addEventListener('change', e => { if (e.target.files.length) run(e.target.files); });
+  $('#btnNew').addEventListener('click', e => { e.stopPropagation(); resetUI(); input.click(); });
+  $('#btnMd').addEventListener('click', copyMd);
+
+  let timer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { if (DATA) drawDaily($('#chartDaily'), DATA.daily); }, 180);
+  });
+})();
+</script>
+</body>
+</html>

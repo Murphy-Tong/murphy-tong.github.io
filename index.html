@@ -1,323 +1,386 @@
 <!DOCTYPE html>
-<html>
-<meta charset="UTF-8" />
-<meta http-equiv="cache-control" content="no-store" />
-<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" name="viewport" />
-
+<html lang="zh-CN">
 <head>
-    <script src="https://unpkg.com/vue"></script>
-    <!-- <script src="https://unpkg.com/naive-ui"></script> -->
-    <script src="https://unpkg.com/naive-ui@2.38.1/dist/index.prod.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.1/math.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Murphy Tong — 前端 / 工具</title>
+<meta name="description" content="前端工程师。写 Web，也写一些用完就离不开的小工具：纯前端、单文件、数据不出本机。">
+<meta name="theme-color" content="#080b10">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Murphy Tong — 前端 / 工具">
+<meta property="og:description" content="写前端，也写工具。把复杂拆成简单，把重复交给脚本。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23080b10'/%3E%3Cpath d='M8 23V9l8 8 8-8v14' stroke='%2359e0c0' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#080b10;
+  --ink:#f2f6fb;
+  --muted:#8b9bb0;
+  --dim:#5b6a7d;
+  --line:rgba(255,255,255,.09);
+  --line2:rgba(255,255,255,.18);
+  --mint:#59e0c0;
+  --blue:#6ea8ff;
+  --violet:#c084fc;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  --wrap:1120px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:15px;line-height:1.7;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(1100px 620px at 12% -12%, rgba(110,168,255,.18), transparent 62%),
+    radial-gradient(900px 520px at 88% 2%, rgba(89,224,192,.13), transparent 60%),
+    radial-gradient(760px 520px at 50% 108%, rgba(192,132,252,.10), transparent 62%);
+}
+.grid{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,.032) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,.032) 1px, transparent 1px);
+  background-size:68px 68px;
+  -webkit-mask-image:radial-gradient(circle at 50% 18%,#000 0%,rgba(0,0,0,.45) 45%,transparent 78%);
+  mask-image:radial-gradient(circle at 50% 18%,#000 0%,rgba(0,0,0,.45) 45%,transparent 78%);
+}
+a{color:inherit}
+::selection{background:rgba(89,224,192,.28);color:#fff}
+::-webkit-scrollbar{width:10px}
+::-webkit-scrollbar-track{background:#080b10}
+::-webkit-scrollbar-thumb{background:#1e2733;border-radius:6px;border:2px solid #080b10}
+::-webkit-scrollbar-thumb:hover{background:#2c3949}
+
+.wrap{width:100%;max-width:var(--wrap);margin:0 auto;padding:0 28px;position:relative;z-index:1}
+
+/* ---------- nav ---------- */
+.nav{position:fixed;top:0;left:0;right:0;z-index:60;transition:background .35s,padding .35s,border-color .35s;
+  border-bottom:1px solid transparent;padding:20px 0}
+.nav.scrolled{background:rgba(8,11,16,.72);-webkit-backdrop-filter:blur(16px) saturate(140%);backdrop-filter:blur(16px) saturate(140%);border-bottom-color:var(--line);padding:12px 0}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.mark{display:flex;align-items:center;gap:10px;text-decoration:none}
+.mark svg{width:26px;height:26px}
+.mark span{font:700 13px/1 var(--mono);letter-spacing:.14em;color:var(--ink)}
+.nav nav{display:flex;align-items:center;gap:26px}
+.nav nav a{color:var(--muted);text-decoration:none;font-size:13.5px;transition:color .2s}
+.nav nav a:hover{color:var(--ink)}
+.nav .gh{border:1px solid var(--line2);padding:7px 15px;border-radius:999px;font-size:12.5px;color:#d5e0ee}
+.nav .gh:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.34);color:#fff}
+
+/* ---------- hero ---------- */
+.hero{position:relative;min-height:92svh;display:flex;align-items:center;padding:120px 0 80px;z-index:1}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;font:500 11.5px/1 var(--mono);
+  letter-spacing:.16em;text-transform:uppercase;color:#9fb2c7;
+  border:1px solid var(--line);border-radius:999px;padding:8px 15px 8px 12px;
+  background:rgba(255,255,255,.025)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 0 rgba(89,224,192,.6);animation:pulse 2.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(89,224,192,.55)}70%{box-shadow:0 0 0 9px rgba(89,224,192,0)}100%{box-shadow:0 0 0 0 rgba(89,224,192,0)}}
+
+h1{
+  font-size:clamp(54px,11.5vw,138px);line-height:.9;letter-spacing:-.055em;
+  font-weight:700;margin:26px 0 0;
+}
+h1 .surname{
+  background:linear-gradient(112deg,#ffffff 18%,#cfe0f5 52%,#8fabc9 92%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+h1 .given{
+  color:transparent;-webkit-text-stroke:1.6px rgba(242,246,251,.42);
+  margin-left:.14em;
+}
+.lead{font-size:clamp(19px,2.5vw,27px);color:#cfdcea;margin:30px 0 0;letter-spacing:.01em;font-weight:400}
+.lead em{font-style:normal;color:var(--mint)}
+.desc{margin:16px 0 0;max-width:530px;color:var(--muted);font-size:14.5px;line-height:1.85}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:38px}
+.btn{display:inline-flex;align-items:center;gap:8px;text-decoration:none;border-radius:999px;
+  padding:12px 24px;font-size:13.5px;font-weight:600;border:1px solid var(--line2);
+  color:var(--ink);transition:transform .22s cubic-bezier(.2,.8,.2,1),background .22s,border-color .22s,box-shadow .22s}
+.btn:hover{transform:translateY(-2px)}
+.btn.primary{background:var(--ink);color:#080b10;border-color:var(--ink)}
+.btn.primary:hover{box-shadow:0 14px 34px -14px rgba(242,246,251,.5)}
+.btn.ghost:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.3)}
+
+.scroll-hint{position:absolute;left:28px;bottom:34px;display:flex;align-items:center;gap:12px;
+  font:500 10px/1 var(--mono);letter-spacing:.28em;color:var(--dim)}
+.scroll-hint .line{width:44px;height:1px;background:linear-gradient(90deg,var(--dim),transparent)}
+
+/* ---------- section ---------- */
+.section{padding:110px 0;position:relative;z-index:1}
+.sec-head{display:grid;grid-template-columns:auto 1fr;gap:14px 20px;align-items:baseline;margin-bottom:46px}
+.index{font:600 11.5px/1 var(--mono);letter-spacing:.14em;color:var(--mint)}
+h2{font-size:clamp(27px,3.8vw,40px);font-weight:600;letter-spacing:-.035em;margin:0}
+.sec-head p{grid-column:2;margin:6px 0 0;color:var(--muted);font-size:14px;max-width:540px;line-height:1.8}
+
+/* ---------- tool card ---------- */
+.tool{
+  position:relative;display:grid;grid-template-columns:1fr 290px;gap:44px;align-items:stretch;
+  padding:34px 36px;border:1px solid var(--line);border-radius:22px;overflow:hidden;
+  text-decoration:none;color:inherit;
+  background:linear-gradient(158deg,rgba(255,255,255,.05),rgba(255,255,255,.012) 55%,rgba(255,255,255,.03));
+  transition:transform .38s cubic-bezier(.2,.8,.2,1),border-color .38s,box-shadow .38s;
+}
+.tool::after{
+  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .35s;
+  background:radial-gradient(420px circle at var(--mx,60%) var(--my,20%),rgba(110,168,255,.16),transparent 62%);
+}
+.tool:hover{transform:translateY(-5px);border-color:rgba(110,168,255,.42);
+  box-shadow:0 30px 70px -34px rgba(110,168,255,.6)}
+.tool:hover::after{opacity:1}
+.tool-body{position:relative;z-index:1}
+.tag{display:inline-block;font:600 10px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;
+  color:var(--blue);border:1px solid rgba(110,168,255,.34);border-radius:5px;padding:5px 9px;
+  background:rgba(110,168,255,.08)}
+.tool h3{font-size:24px;font-weight:600;letter-spacing:-.02em;margin:16px 0 10px}
+.tool p{margin:0;color:var(--muted);font-size:14px;line-height:1.8;max-width:520px}
+.chips{list-style:none;display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:20px 0 0}
+.chips li{font-size:11.5px;color:#a9bccd;border:1px solid var(--line);border-radius:999px;padding:4px 11px;
+  background:rgba(255,255,255,.028)}
+.go{display:inline-flex;align-items:center;gap:7px;margin-top:24px;font-size:13.5px;font-weight:600;color:var(--mint)}
+.go svg{transition:transform .3s}
+.tool:hover .go svg{transform:translateX(5px)}
+
+.tool-vis{position:relative;z-index:1;border:1px solid var(--line);border-radius:15px;
+  background:rgba(6,9,13,.62);padding:16px;display:flex;flex-direction:column;gap:14px}
+.vis-head{display:flex;justify-content:space-between;align-items:center;
+  font:500 10px/1 var(--mono);letter-spacing:.1em;color:var(--dim);text-transform:uppercase}
+.vis-head b{color:var(--mint);font-weight:600}
+.mini{display:flex;align-items:flex-end;gap:7px;flex:1;min-height:132px}
+.mini i{flex:1;height:var(--h);border-radius:4px 4px 2px 2px;
+  background:linear-gradient(180deg,rgba(110,168,255,.95),rgba(110,168,255,.12));
+  transform-origin:bottom;animation:grow .9s cubic-bezier(.2,.9,.2,1) backwards}
+.mini i:nth-child(1){animation-delay:.05s}.mini i:nth-child(2){animation-delay:.1s}
+.mini i:nth-child(3){animation-delay:.15s}.mini i:nth-child(4){animation-delay:.2s}
+.mini i:nth-child(5){animation-delay:.25s}.mini i:nth-child(6){animation-delay:.3s}
+.mini i:nth-child(7){animation-delay:.35s}.mini i:nth-child(8){animation-delay:.4s}
+.mini i.hot{background:linear-gradient(180deg,var(--mint),rgba(89,224,192,.15))}
+@keyframes grow{from{transform:scaleY(.02);opacity:0}to{transform:scaleY(1);opacity:1}}
+
+/* ---------- about ---------- */
+.about{display:grid;grid-template-columns:1.05fr .95fr;gap:64px;align-items:start}
+.about p{color:var(--muted);font-size:14.5px;line-height:1.95;margin:22px 0 0}
+.about p strong{color:#dbe6f3;font-weight:600}
+.principles{list-style:none;padding:0;margin:0;display:grid;gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.principles li{background:#0a0e14;padding:17px 20px;display:grid;grid-template-columns:30px 1fr;gap:3px 10px;
+  align-items:baseline;transition:background .25s}
+.principles li:hover{background:#0d131b}
+.principles li span{grid-row:span 2;font:600 10.5px/1.9 var(--mono);color:var(--dim);letter-spacing:.06em}
+.principles b{font-size:13.5px;font-weight:600;letter-spacing:.01em}
+.principles em{font-style:normal;color:var(--muted);font-size:12.5px;line-height:1.7}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:46px}
+.stats div{background:#0a0e14;padding:22px 20px}
+.stats b{display:block;font-size:19px;font-weight:600;letter-spacing:-.02em;color:#e8f0f9}
+.stats small{color:var(--dim);font-size:11.5px;letter-spacing:.02em}
+
+/* ---------- footer ---------- */
+footer{border-top:1px solid var(--line);padding:38px 0 44px;position:relative;z-index:1}
+.foot-inner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;
+  color:var(--dim);font-size:12.5px}
+.foot-inner a{color:var(--muted);text-decoration:none;transition:color .2s}
+.foot-inner a:hover{color:var(--ink)}
+.foot-links{display:flex;gap:20px}
+
+/* ---------- reveal ---------- */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .8s cubic-bezier(.2,.8,.2,1),transform .8s cubic-bezier(.2,.8,.2,1)}
+.reveal.in{opacity:1;transform:none}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  .reveal{opacity:1;transform:none}
+  html{scroll-behavior:auto}
+}
+
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .tool{grid-template-columns:1fr;gap:30px;padding:28px}
+  .tool-vis{max-width:100%}
+  .about{grid-template-columns:1fr;gap:40px}
+  .section{padding:84px 0}
+  .hero{min-height:auto;padding:130px 0 90px}
+  .scroll-hint{display:none}
+  .sec-head{grid-template-columns:1fr;gap:8px}
+  .sec-head p{grid-column:1}
+}
+@media (max-width:560px){
+  .wrap{padding:0 20px}
+  .nav nav a:not(.gh){display:none}
+  .stats div{padding:18px 14px}
+  .stats b{font-size:17px}
+  .stats small{font-size:10.5px}
+  h1{font-size:clamp(46px,15vw,72px)}
+  h1 .given{-webkit-text-stroke-width:1.2px}
+}
+</style>
 </head>
-
-<!-- // y = 2x + 5.77 | .52 +2.08 -->
-<!-- // y = 2x + 6.25 | .48 -2.08 -->
-
 <body>
-    <style>
-        #app {
-            height: 100vh;
-        }
+<div class="grid" aria-hidden="true"></div>
 
-        .content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 24px 32px;
-            gap: 24px;
-            height: 100vh;
-            overflow: scroll;
-        }
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a class="mark" href="#top" aria-label="Murphy Tong">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <rect width="32" height="32" rx="8" fill="#0d131b" stroke="rgba(255,255,255,.12)"/>
+        <path d="M8 23V9l8 8 8-8v14" stroke="#59e0c0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>MURPHY TONG</span>
+    </a>
+    <nav>
+      <a href="#tools">工具箱</a>
+      <a href="#about">关于</a>
+      <a class="gh" href="https://github.com/Murphy-Tong" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </div>
+</header>
 
-        .n-table {
-            text-align: center;
-        }
-
-        .n-card__content {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .n-float-button .n-float-button__body {
-            padding: 0;
-        }
-
-        .sku-normal {
-            color: #18a058 !important;
-        }
-
-        .yl-sku {
-            color: #C2095A !important;
-        }
-
-        .table-head {
-            display: flex;
-            width: 100%;
-            align-items: center;
-            margin-bottom: 24px;
-            gap: 24px;
-        }
-
-        .table-head>* {
-            flex-shrink: 0;
-        }
-    </style>
-    <template id="product">
-        <n-form ref="formRef" inline :label-width="80" :model="formValue" :rules="rules" :size="size">
-
-            <n-form-item label="优惠券">
-                <n-input-number v-model:value="youhuiquanAmount" placeholder="优惠券面额"></n-input-number>
-            </n-form-item>
-            <n-form-item label="利润点">
-                <n-input-number v-model:value="profitPoint" placeholder="利润点"></n-input-number>
-            </n-form-item>
-            <n-form-item label="货损点">
-                <n-input-number v-model:value="deprofitPoint" placeholder="货损点"></n-input-number>
-            </n-form-item>
-            <n-form-item label="拿货价">
-                <n-input-number v-model:value="inputPrice" clearable class="jinjia"
-                    placeholder="输入拿货价"></n-input-number>
-            </n-form-item>
-        </n-form>
-        <n-table :bordered="true" :single-line="false">
-            <n-thead>
-                <n-tr>
-                    <n-th rowspan="2" style="vertical-align: middle;">正价调整</n-th>
-                    <n-th rowspan="2" style="vertical-align: middle;" class="input-price">进价</n-th>
-                    <n-th colspan="4" class="sku-normal">普通 sku</n-th>
-                    <n-th colspan="4" class="yl-sku">低价 sku</n-th>
-                    <n-th rowspan="2" class="youuhuiquan" style="vertical-align: middle;">优惠券</n-th>
-                </n-tr>
-                <n-tr>
-                    <n-th class="sku-normal">定价</n-th>
-                    <n-th class="sku-normal">折后价</n-th>
-                    <n-th class="sku-normal">到手价</n-th>
-                    <n-th class="sku-normal">利润</n-th>
-
-                    <n-th class="yl-sku">定价</n-th>
-                    <n-th class="yl-sku">折后价</n-th>
-                    <n-th class="yl-sku">到手价</n-th>
-                    <n-th class="yl-sku" style="border-right-width:unset">利润</n-th>
-                </n-tr>
-            </n-thead>
-            <template v-for="(item) in tabDatas" :key="item.title">
-                <n-tr>
-                    <n-td>{{item.title}}</n-td>
-                    <n-td class="input-price">{{item.jinjia}}</n-td>
-                    <n-td class="sku-normal" @click="onPriceClick(item)"
-                        v-for="item in item.priceNormalSKU.split('/')">{{item}}</n-td>
-                    <n-td class="yl-sku" @click="onPriceClick(item)"
-                        v-for="item in item.priceYLSKU.split('/')">{{item}}</n-td>
-                    <n-td class="youuhuiquan">{{item.youhuiquanAmount}}</n-td>
-                </n-tr>
-            </template>
-        </n-table>
-    </template>
-    <div id="app">
-        <div class="content">
-            <n-message-provider>
-                <template v-for="item in data" :key="item">
-                    <n-card closable @close="handleClose(data)">
-                        <template #header>
-                            <n-input placeholder="商品名称" style="min-width: 120px;width:fit-content;;font-weight: 700;font-size: 32px;"></n-input>
-                        </template>
-                        <Product />
-                    </n-card>
-                </template>
-            </n-message-provider>
-        </div>
-        <n-float-button :right="64" :bottom="124" shape="square" @click="addProduct">
-            <n-icon size="40">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path
-                        d="M368.5 240H272v-96.5c0-8.8-7.2-16-16-16s-16 7.2-16 16V240h-96.5c-8.8 0-16 7.2-16 16 0 4.4 1.8 8.4 4.7 11.3 2.9 2.9 6.9 4.7 11.3 4.7H240v96.5c0 4.4 1.8 8.4 4.7 11.3 2.9 2.9 6.9 4.7 11.3 4.7 8.8 0 16-7.2 16-16V272h96.5c8.8 0 16-7.2 16-16s-7.2-16-16-16z" />
-                </svg>
-            </n-icon>
-        </n-float-button>
+<main>
+  <section class="hero" id="top">
+    <div class="wrap">
+      <div class="eyebrow"><span class="dot"></span>Frontend Engineer · Tool Maker</div>
+      <h1><span class="surname">Murphy</span><span class="given">Tong</span></h1>
+      <p class="lead">写前端，也写<em>工具</em>。</p>
+      <p class="desc">
+        把复杂拆成简单，把重复交给脚本。<br>
+        这里放的是我自己用顺手了的小工具 —— 纯前端、单文件、数据不出本机。
+      </p>
+      <div class="cta">
+        <a class="btn primary" href="#tools">看看工具</a>
+        <a class="btn ghost" href="https://github.com/Murphy-Tong" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
     </div>
-    <script>
-        const Product = Vue.defineComponent({
-            template: "#product",
-            setup() {
-                const config = {
-                    dinjiaScale: 2,
-                }
-                const state = Vue.reactive({
-                    inputPrice: 0,
-                    youhuiquanAmount: 3,
-                    profitPoint: 0.02,
-                    deprofitPoint: 0.02,
-                })
-                const yinliuSKURate = Vue.computed(() => {
-                    return math.subtract(math.bignumber(math.divide(math.bignumber(1), math.bignumber(config.dinjiaScale))), math.bignumber(state.deprofitPoint)).toFixed(2)
-                })
-                const normalSKURate = Vue.computed(() => {
-                    return math.add(
-                        math.bignumber(
-                            math.divide(
-                                math.bignumber(1),
-                                math.bignumber(config.dinjiaScale)
-                            )
-                        ),
-                        math.bignumber(state.profitPoint)
-                    )
-                        .toFixed(2)
-                })
-                const priceYLDINGJIA = ((config) => {
-                    if (Number.isNaN(state.inputPrice)) {
-                        return
-                    }
-                    if (state.inputPrice <= 0) {
-                        return 0
-                    }
-                    return (math.add(
-                        math.bignumber(state.inputPrice * 2),
-                        math.bignumber(
-                            math.divide(
-                                math.bignumber(state.youhuiquanAmount),
-                                math.bignumber(config.yinliuSKURate)
-                            )
-                        )
-                    )).toFixed(2)
-                })
-                const priceNormalDINGJIA = ((config) => {
-                    if (Number.isNaN(state.inputPrice)) {
-                        return
-                    }
-                    if (state.inputPrice <= 0) {
-                        return 0
-                    }
-                    return (math.add(
-                        math.bignumber(state.inputPrice * 2),
-                        math.bignumber(
-                            math.divide(
-                                math.bignumber(state.youhuiquanAmount),
-                                math.bignumber(config.normalSKURate)
-                            )
-                        )
-                    )).toFixed(2)
-                })
-                const priceYLSKU = ((config) => {
-                    if (Number.isNaN(priceYLDINGJIA(config))) {
-                        return
-                    }
-                    if (state.inputPrice <= 0) {
-                        return 0
-                    }
-                    return math.multiply(
-                        math.bignumber(priceYLDINGJIA(config)),
-                        math.bignumber(config.yinliuSKURate)
-                    ).toFixed(2)
-                })
-                const priceNormalSKU = ((config) => {
-                    if (Number.isNaN(priceNormalDINGJIA(config))) {
-                        return
-                    }
-                    if (state.inputPrice <= 0) {
-                        return 0
-                    }
-                    return math.multiply(
-                        math.bignumber(priceNormalDINGJIA(config)),
-                        math.bignumber(config.normalSKURate)
-                    ).toFixed(2)
-                })
-                const expectProfitYLSKU = ((config) => {
-                    if (Number.isNaN(priceYLSKU(config))) {
-                        return
-                    }
-                    if (state.inputPrice <= 0) {
-                        return 0
-                    }
-                    return math.chain(math.bignumber(priceYLSKU(config)))
-                        .subtract(math.bignumber(state.youhuiquanAmount))
-                        .subtract(math.bignumber(state.inputPrice))
-                        .done()
-                        .toFixed(2)
-                })
-                const expectProfitNormalSKU = ((config) => {
-                    if (Number.isNaN(priceNormalSKU(config))) {
-                        return
-                    }
-                    if (state.inputPrice <= 0) {
-                        return 0
-                    }
-                    return math.chain(math.bignumber(priceNormalSKU(config)))
-                        .subtract(math.bignumber(state.youhuiquanAmount))
-                        .subtract(math.bignumber(state.inputPrice))
-                        .done()
-                        .toFixed(2)
-                })
-                const genTableRow = (config) => {
-                    return {
-                        title: config.normalSKURate,
-                        jinjia: state.inputPrice,
-                        priceYLSKU: `${priceYLDINGJIA(config)} / ${priceYLSKU(config)} / ${math.subtract(priceYLSKU(config), math.bignumber(state.youhuiquanAmount)).toFixed(2)} / ${expectProfitYLSKU(config)}`,
-                        priceNormalSKU: `${priceNormalDINGJIA(config)}  / ${priceNormalSKU(config)} / ${math.subtract(priceNormalSKU(config), math.bignumber(state.youhuiquanAmount)).toFixed(2)} / ${expectProfitNormalSKU(config)}`,
-                        youhuiquanAmount: state.youhuiquanAmount,
-                    }
-                }
-                const tabDatas = Vue.computed(() => {
-                    if (Number.isNaN(state.inputPrice) || state.inputPrice <= 0) {
-                        return []
-                    }
-                    return [
-                        { ...config, yinliuSKURate: yinliuSKURate.value, normalSKURate: (+normalSKURate.value).toFixed(2), title: "第0次" },
-                        { ...config, yinliuSKURate: yinliuSKURate.value, normalSKURate: (+normalSKURate.value + 0.02).toFixed(2), title: "第1次" },
-                        { ...config, yinliuSKURate: yinliuSKURate.value, normalSKURate: (+normalSKURate.value + 0.04).toFixed(2), title: "第2次" },
-                    ].map(i => genTableRow(i))
-                })
+    <div class="scroll-hint" aria-hidden="true"><span>SCROLL</span><span class="line"></span></div>
+  </section>
 
-                const message = naive.useMessage()
+  <section class="section" id="tools">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="index">01</span>
+        <h2>工具箱</h2>
+        <p>打开即用，不用注册，不装插件，也不上传任何数据。每一个都是单个 HTML 文件，Ctrl+S 存下来也能离线跑。</p>
+      </div>
 
-                const onPriceClick = (price) => {
-                    navigator.clipboard.writeText(price).then(() => {
-                        message.success(
-                            `已复制：${price}`
-                        )
-                    }).catch((e) => {
-                        message.error(e.message || "复制失败")
-                    })
+      <a class="tool reveal" href="tools/usage-analyzer.html" data-spot>
+        <div class="tool-body">
+          <span class="tag">Analyzer</span>
+          <h3>AI 用量账单分析</h3>
+          <p>
+            把导出的一周用量 zip 直接拖进浏览器，立刻看清钱花在哪个模型、哪个 Key、哪一类 token 上，
+            以及缓存命中把成本压到了什么水平 —— 顺带告诉你哪一块还有压价空间。
+          </p>
+          <ul class="chips">
+            <li>本地解析</li>
+            <li>零依赖</li>
+            <li>zip 直接拖入</li>
+            <li>可导出 Markdown</li>
+          </ul>
+          <span class="go">打开工具
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M3 8h9M8.5 3.5 13 8l-4.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </div>
+        <div class="tool-vis" aria-hidden="true">
+          <div class="vis-head"><span>weekly cost</span><b>cache 96.3%</b></div>
+          <div class="mini">
+            <i style="--h:46%"></i><i style="--h:11%"></i><i style="--h:45%"></i>
+            <i style="--h:44%"></i><i style="--h:96%" class="hot"></i>
+            <i style="--h:23%"></i><i style="--h:19%"></i><i style="--h:31%"></i>
+          </div>
+        </div>
+      </a>
+    </div>
+  </section>
 
-                }
-                return {
-                    ...Vue.toRefs(state),
-                    priceYLSKU,
-                    priceYLDINGJIA,
-                    priceNormalSKU,
-                    config,
-                    priceNormalDINGJIA,
-                    expectProfitNormalSKU,
-                    expectProfitYLSKU,
-                    onPriceClick,
-                    tabDatas
-                }
-            }
-        })
-        const App = {
-            setup() {
-                let index = 1;
-                const state = Vue.reactive({
-                    data: [index++]
-                })
-                const handleClose = (pos) => {
-                    state.data.splice(state.data.findIndex(i => i === pos), 1)
-                }
-                const addProduct = () => {
-                    state.data.push(index++)
-                }
-                return {
-                    handleClose,
-                    addProduct,
-                    ...Vue.toRefs(state)
-                }
-            }
+  <section class="section" id="about">
+    <div class="wrap">
+      <div class="about">
+        <div class="reveal">
+          <div class="sec-head" style="margin-bottom:0">
+            <span class="index">02</span>
+            <h2>关于</h2>
+          </div>
+          <p>
+            白天写业务代码，晚上折腾小工具。做 Web、做跨端界面，也常年和构建工具、调试面板、
+            各式各样的「临时脚本」打交道。
+          </p>
+          <p>
+            做久了发现，真正让人离不开的往往不是大系统，而是那些<strong>打开就能用、用完就走</strong>的小东西。
+            这个站点就是它们的落脚点 —— 没有框架、没有追踪脚本、没有构建流程，
+            一个 HTML 文件就是全部。
+          </p>
+          <div class="stats">
+            <div><b>1</b><small>个工具</small></div>
+            <div><b>0</b><small>个依赖</small></div>
+            <div><b>0</b><small>次上传</small></div>
+          </div>
+        </div>
+
+        <ul class="principles reveal">
+          <li><span>01</span><b>更少的依赖</b><em>平台能做到的，就不多引一个包。</em></li>
+          <li><span>02</span><b>结构胜过技巧</b><em>好读的代码比聪明的代码活得久。</em></li>
+          <li><span>03</span><b>能自动化就别手动</b><em>重复三次以上的操作，值得写成脚本。</em></li>
+          <li><span>04</span><b>隐私优先</b><em>能在本地算完的，就不发到服务器。</em></li>
+          <li><span>05</span><b>快是功能</b><em>首屏慢一秒，等于少了一半用户。</em></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span>© <span id="year">2026</span> Murphy Tong</span>
+    <div class="foot-links">
+      <span>纯静态 · 无追踪</span>
+      <a href="https://github.com/Murphy-Tong" target="_blank" rel="noopener">GitHub</a>
+      <a href="#top">回到顶部</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var nav = document.getElementById('nav');
+  var onScroll = function () {
+    nav.classList.toggle('scrolled', window.scrollY > 24);
+  };
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  var revealEls = document.querySelectorAll('.reveal');
+  var showAll = function () { revealEls.forEach(function (el) { el.classList.add('in'); }); };
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          e.target.classList.add('in');
+          io.unobserve(e.target);
         }
-        const app = Vue.createApp(App)
-        app.use(naive)
-        app.component('Product', Product)
-        app.mount('#app')
-    </script>
-</body>
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -40px' });
+    revealEls.forEach(function (el) { io.observe(el); });
+    // 兜底：锚点跳转 / 打印 / 异常环境下也不至于空白
+    setTimeout(showAll, 3000);
+    window.addEventListener('beforeprint', showAll);
+  } else {
+    showAll();
+  }
 
+  document.querySelectorAll('[data-spot]').forEach(function (el) {
+    el.addEventListener('mousemove', function (ev) {
+      var r = el.getBoundingClientRect();
+      el.style.setProperty('--mx', (ev.clientX - r.left) + 'px');
+      el.style.setProperty('--my', (ev.clientY - r.top) + 'px');
+    });
+  });
+})();
+</script>
+</body>
 </html>
